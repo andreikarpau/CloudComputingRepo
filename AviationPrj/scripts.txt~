@@ -1,0 +1,30 @@
+// Build
+
+hadoop com.sun.tools.javac.Main G1T1RankAirports.java -d build
+hadoop com.sun.tools.javac.Main G1T3RankWeekDays.java -d build
+
+hadoop com.sun.tools.javac.Main *.java -d build
+
+jar -cvf Capstone.jar -C build/ ./
+
+// Copy
+
+rm ~/jars/Capstone.jar
+scp Capstone.jar namenode:~/jars
+
+// Run
+
+hadoop jar ~/jars/Capstone.jar capstoneHadoop.G1T1RankAirports /TestData/input.txt
+
+hadoop jar ~/jars/Capstone.jar capstoneHadoop.G1T3RankWeekDays /TestData/input.txt
+
+// Verify and clear hdfs
+
+hdfs dfs -copyToLocal /Capstone/Output/TopAirports/part-r-00000 ~/
+
+hdfs dfs -copyToLocal /Capstone/Tmp/TopWeekDays/part-r-00000 ~/
+
+
+nano part-r-00000
+rm part-r-00000
+
