@@ -64,7 +64,7 @@ public class G1T3RankWeekDays extends Configured implements Tool {
         jobA.setJarByClass(G1T3RankWeekDays.class);
         jobA.waitForCompletion(true);
         
-        Job jobB = Job.getInstance(conf, "WeekDays Perf");
+        Job jobB = Job.getInstance(conf, "Rank WeekDays Perf");
         jobB.setOutputKeyClass(Text.class);
         jobB.setOutputValueClass(DoubleWritable.class);
 
@@ -109,7 +109,7 @@ public class G1T3RankWeekDays extends Configured implements Tool {
         }
     }
 
-    public static class WeekDaysPerfReduce extends Reducer<Text, IntWritable, Text, DoubleWritable> {
+    public static class WeekDaysPerfReduce extends Reducer<Text, IntWritable, Text, DoubleWritable> {    	
         @Override
         public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
         	int sum = 0;
@@ -124,6 +124,8 @@ public class G1T3RankWeekDays extends Configured implements Tool {
         	
         	if (valuesCount != 0)
         		perf = inTime / valuesCount;
+        	
+        	System.out.println("Day = " + key.toString() + " valuesCount = " + valuesCount + " sum = " + sum + " perf = " + perf);
         	
         	context.write(key, new DoubleWritable(perf));
         }

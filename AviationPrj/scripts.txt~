@@ -1,7 +1,8 @@
 // Build
+#export HADOOP_CLASSPATH=/usr/lib/jvm/java-7-openjdk-amd64/lib/tools.jar
 
-hadoop com.sun.tools.javac.Main G1T1RankAirports.java -d build
-hadoop com.sun.tools.javac.Main G1T3RankWeekDays.java -d build
+#hadoop com.sun.tools.javac.Main G1T1RankAirports.java -d build
+#hadoop com.sun.tools.javac.Main G1T3RankWeekDays.java -d build
 
 hadoop com.sun.tools.javac.Main *.java -d build
 
@@ -18,11 +19,22 @@ hadoop jar ~/jars/Capstone.jar capstoneHadoop.G1T1RankAirports /TestData/input.t
 
 hadoop jar ~/jars/Capstone.jar capstoneHadoop.G1T3RankWeekDays /TestData/input.txt
 
+hadoop jar ~/jars/Capstone.jar capstoneHadoop.G2T1RankAirlinesFromX /TestData/input.txt /TestData/airportsInput.txt
+
+hadoop jar ~/jars/Capstone.jar capstoneHadoop.G2T3XYRankAirlinesArrPerf /TestData/input.txt /TestData/airportsXYInput.txt
+
 // Verify and clear hdfs
 
 hdfs dfs -copyToLocal /Capstone/Output/TopAirports/part-r-00000 ~/
 
 hdfs dfs -copyToLocal /Capstone/Tmp/TopWeekDays/part-r-00000 ~/
+hdfs dfs -copyToLocal /Capstone/Output/TopWeekDays/part-r-00000 ~/
+
+hdfs dfs -copyToLocal /Capstone/Tmp/TopAirlinesFromX/part-r-00000 ~/
+hdfs dfs -copyToLocal /Capstone/Output/TopAirlinesFromX/part-r-00000 ~/
+
+hdfs dfs -copyToLocal /Capstone/Tmp/G2T3XYRankAirlinesArrPerf/part-r-00000 ~/
+hdfs dfs -copyToLocal /Capstone/Output/G2T3XYRankAirlinesArrPerf/part-r-00000 ~/
 
 
 nano part-r-00000
