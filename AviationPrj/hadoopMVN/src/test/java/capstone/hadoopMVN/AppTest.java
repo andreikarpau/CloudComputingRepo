@@ -41,6 +41,26 @@ public class AppTest
     public void testApp()
     {
     	TestFilesParse();
+    	//TestCassandra();
+    }
+    
+    private static void TestCassandra()
+    {
+    	String host = "54.210.238.87";
+    	Integer port = 9042;
+        CassandraHelper client = new CassandraHelper();
+        
+        //Create the connection
+        client.createConnection(host, port);
+        System.out.println("starting writes");
+        
+        //Add test value
+        client.addKey("test1234");
+        
+        //Close the connection
+        client.closeConnection();
+        
+        System.out.println("Write Complete");
     }
     
     private static void TestFilesParse()
@@ -59,7 +79,7 @@ public class AppTest
     		assertTrue(infos[0].GetValue(ColumnNames.ArrTime).equals("1724"));
 
     		assertTrue(infos[1].GetValues()[0].equals(""));
-    		assertTrue(infos[1].GetValues()[1].equals("NA"));
+    		assertTrue(infos[1].GetValues()[1].equals(""));
     		assertTrue(infos[1].GetValues()[2].equals(""));
 
     		assertTrue(infos[2].GetValues()[0].equals("BDL"));

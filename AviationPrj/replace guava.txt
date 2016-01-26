@@ -1,0 +1,34 @@
+scp guava-16.0.jar namenode:~/
+scp guava-11.0.2.jar namenode:~/
+
+sudo rm $HADOOP_HOME/share/hadoop/common/lib/guava-11.0.2.jar
+sudo rm $HADOOP_HOME/share/hadoop/hdfs/lib/guava-11.0.2.jar
+sudo rm $HADOOP_HOME/share/hadoop/tools/lib/guava-11.0.2.jar
+sudo rm $HADOOP_HOME/share/hadoop/yarn/lib/guava-11.0.2.jar
+sudo rm $HADOOP_HOME/share/hadoop/httpfs/tomcat/webapps/webhdfs/WEB-INF/lib/guava-11.0.2.jar
+sudo rm $HADOOP_HOME/share/hadoop/kms/tomcat/webapps/kms/WEB-INF/lib/guava-11.0.2.jar
+
+
+sudo rm $HADOOP_HOME/share/hadoop/common/lib/guava-16.0.1.jar
+sudo rm $HADOOP_HOME/share/hadoop/hdfs/lib/guava-16.0.1.jar
+sudo rm $HADOOP_HOME/share/hadoop/tools/lib/guava-16.0.1.jar
+sudo rm $HADOOP_HOME/share/hadoop/yarn/lib/guava-16.0.1.jar
+sudo rm $HADOOP_HOME/share/hadoop/httpfs/tomcat/webapps/webhdfs/WEB-INF/lib/guava-16.0.1.jar
+sudo rm $HADOOP_HOME/share/hadoop/kms/tomcat/webapps/kms/WEB-INF/lib/guava-16.0.1.jar
+
+sudo cp -i ~/guava-11.0.2.jar $HADOOP_HOME/share/hadoop/common/lib
+sudo cp -i ~/guava-11.0.2.jar $HADOOP_HOME/share/hadoop/hdfs/lib
+sudo cp -i ~/guava-11.0.2.jar $HADOOP_HOME/share/hadoop/tools/lib
+sudo cp -i ~/guava-11.0.2.jar $HADOOP_HOME/share/hadoop/yarn/lib
+sudo cp -i ~/guava-11.0.2.jar $HADOOP_HOME/share/hadoop/httpfs/tomcat/webapps/webhdfs/WEB-INF/lib
+sudo cp -i ~/guava-11.0.2.jar $HADOOP_HOME/share/hadoop/kms/tomcat/webapps/kms/WEB-INF/lib
+
+
+
+sudo cp -i ~/guava-16.0.jar $HADOOP_HOME/share/hadoop/common/lib
+sudo cp -i ~/guava-16.0.jar $HADOOP_HOME/share/hadoop/hdfs/lib
+sudo cp -i ~/guava-16.0.jar $HADOOP_HOME/share/hadoop/tools/lib
+sudo cp -i ~/guava-16.0.jar $HADOOP_HOME/share/hadoop/yarn/lib
+sudo cp -i ~/guava-16.0.jar $HADOOP_HOME/share/hadoop/httpfs/tomcat/webapps/webhdfs/WEB-INF/lib
+sudo cp -i ~/guava-16.0.jar $HADOOP_HOME/share/hadoop/kms/tomcat/webapps/kms/WEB-INF/lib
+

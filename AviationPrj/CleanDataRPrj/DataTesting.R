@@ -56,3 +56,19 @@ items2 <- items2[!is.na(items2$V5)]
 itemsCount <- nrow(items) + nrow(items2)
 print((itemsCount - (sum(items$V5) + sum(items2$V5))) / itemsCount)
 
+
+
+print("G2T4 mean arrival delay:")
+origin <- "BWI"
+depature <- "STL"
+
+items <- tb1[tb1$V1 == origin]
+items <- items[items$V2 == depature]
+items <- items[!is.na(items$V7)]
+
+items2 <- tb2[tb2$V1 == origin]
+items2 <- items2[items2$V2 == depature]
+items2 <- items2[!is.na(items2$V7)]
+
+print ((sum(items$V7) + sum(items2$V7)) / (nrow(items) + nrow(items2)))
+

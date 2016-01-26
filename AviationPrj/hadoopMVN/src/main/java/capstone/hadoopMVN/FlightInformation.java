@@ -56,7 +56,11 @@ public class FlightInformation
 
 		for (int i = 0; i < columnNames.length; i++)
 		{
-			values[i] = parts[columnNames[i].getValue()];
+			values[i] = parts[columnNames[i].getValue()].trim();
+			
+			if (values[i].equals("NA"))
+				values[i] = "";
+			
 			keys[i] = columnNames[i];
 		}
 		

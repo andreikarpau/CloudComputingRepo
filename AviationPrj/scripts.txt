@@ -1,5 +1,23 @@
+// Start Hadoop
+$HADOOP_HOME/sbin/start-dfs.sh
+$HADOOP_HOME/sbin/start-yarn.sh
+$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver
+
+// Stop Hadoop
+$HADOOP_HOME/sbin/stop-dfs.sh
+$HADOOP_HOME/sbin/stop-yarn.sh
+$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh stop historyserver
+
+jps
+http://ec2-52-7-209-179.compute-1.amazonaws.com:50070/
+
+// Mount data
+sudo mount /dev/xvdg ~/ClearedData
+
+
 // Build
-#export HADOOP_CLASSPATH=/usr/lib/jvm/java-7-openjdk-amd64/lib/tools.jar
+
+export HADOOP_CLASSPATH=/usr/lib/jvm/java-7-openjdk-amd64/lib/tools.jar
 
 #hadoop com.sun.tools.javac.Main G1T1RankAirports.java -d build
 #hadoop com.sun.tools.javac.Main G1T3RankWeekDays.java -d build
@@ -10,10 +28,15 @@ jar -cvf Capstone.jar -C build/ ./
 
 // Copy
 
-rm ~/jars/Capstone.jar
+rm ~/jars/*.jar
 scp Capstone.jar namenode:~/jars
 
+# scp /home/askofen/Documents/EclipseWorkspace/hadoopMVN/target/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar namenode:~/jars
+
 // Run
+
+# hadoop jar ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.hadoopMVN.G1T1RankAirports /TestData/input.txt stop 172.31.60.4 9042
+
 
 hadoop jar ~/jars/Capstone.jar capstoneHadoop.G1T1RankAirports /TestData/input.txt
 
@@ -22,6 +45,10 @@ hadoop jar ~/jars/Capstone.jar capstoneHadoop.G1T3RankWeekDays /TestData/input.t
 hadoop jar ~/jars/Capstone.jar capstoneHadoop.G2T1RankAirlinesFromX /TestData/input.txt /TestData/airportsInput.txt
 
 hadoop jar ~/jars/Capstone.jar capstoneHadoop.G2T3XYRankAirlinesArrPerf /TestData/input.txt /TestData/airportsXYInput.txt
+
+hadoop jar ~/jars/Capstone.jar capstoneHadoop.G2T4XYMeanArrivalDelay /TestData/input.txt /TestData/airportsXYInput.txt
+
+hadoop jar ~/jars/Capstone.jar capstoneHadoop.G3T1RankAirportsZipf /TestData/input.txt
 
 // Verify and clear hdfs
 
@@ -33,8 +60,11 @@ hdfs dfs -copyToLocal /Capstone/Output/TopWeekDays/part-r-00000 ~/
 hdfs dfs -copyToLocal /Capstone/Tmp/TopAirlinesFromX/part-r-00000 ~/
 hdfs dfs -copyToLocal /Capstone/Output/TopAirlinesFromX/part-r-00000 ~/
 
-hdfs dfs -copyToLocal /Capstone/Tmp/TopAirlinesXY/part-r-00000 ~/
-hdfs dfs -copyToLocal /Capstone/Output/TopAirlinesXY/part-r-00000 ~/
+hdfs dfs -copyToLocal /Capstone/Output/MeanXYDelay/part-r-00000 ~/
+
+hdfs dfs -copyToLocal /Capstone/Tmp/RankAirportsZipf/part-r-00000 ~/
+hdfs dfs -copyToLocal /Capstone/Output/RankAirportsZipf/part-r-00000 ~/
+
 
 
 nano part-r-00000
