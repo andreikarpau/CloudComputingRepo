@@ -22,9 +22,9 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-
-import capstone.hadoopMVN.CassandraHelper.Pair;
+import capstone.hadoopMVN.MapReduceHelper.Pair;
 import capstone.hadoopMVN.MapReduceHelper.TextArrayWritable;
+import capstone.hadoopMVN.FlightInformation.ColumnNames;
 
 public class G2T3XYRankAirlinesArrPerf extends Configured implements Tool {
 	public static void main(String[] args) throws Exception {

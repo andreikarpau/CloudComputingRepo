@@ -72,3 +72,26 @@ items2 <- items2[!is.na(items2$V7)]
 
 print ((sum(items$V7) + sum(items2$V7)) / (nrow(items) + nrow(items2)))
 
+print("G3T2 XY path:")
+origin <- "PHL"
+depature <- "IAH"
+depature2 <- "MOB"
+date1 <- '2006-07-14'
+date2 <- '2006-07-16'
+
+
+items <- tb1[tb1$V1 == origin]
+items <- items[items$V2 == depature]
+items <- items[items$V8 == date1]
+items <- items[items$V12 <= 1200]
+items <- items[which.min(items$V11)]
+
+items2 <- tb1[tb1$V1 == depature]
+items2 <- items2[items2$V2 == depature2]
+items2 <- items2[items2$V8 == date2]
+items2 <- items2[1200 <= items2$V12]
+items2 <- items2[which.min(items2$V11)]
+
+print(items)
+print("")
+print(items2)

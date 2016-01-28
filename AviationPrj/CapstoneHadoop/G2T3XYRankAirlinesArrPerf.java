@@ -247,7 +247,8 @@ public class G2T3XYRankAirlinesArrPerf extends Configured implements Tool {
     	FlightDate(7), 
     	DayOfWeek(8), 
     	CRSDepatureTime(9), 
-    	ArrTime(10);
+		ArrTime(10),
+		DepTime(11);
     	
         private final int value;
 

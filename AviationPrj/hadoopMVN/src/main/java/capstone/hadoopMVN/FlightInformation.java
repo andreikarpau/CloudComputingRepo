@@ -1,32 +1,32 @@
 package capstone.hadoopMVN;
 
-import capstone.hadoopMVN.ColumnNames;
-
-enum ColumnNames 
-{ 
-	Origin(0), 
-	Dest(1), 
-	AirlineID(2), 
-	AirlineCode(3), 
-	ArrDelayed(4), 
-	DepDelayed(5), 
-	ArrDelayMinutes(6), 
-	FlightDate(7), 
-	DayOfWeek(8), 
-	CRSDepatureTime(9), 
-	ArrTime(10);
-	
-    private final int value;
-
-    ColumnNames(final int newValue) {
-        value = newValue;
-    }
-
-    public int getValue() { return value; }
-}
-
 public class FlightInformation 
 {
+	public static enum ColumnNames 
+	{ 
+		Origin(0), 
+		Dest(1), 
+		AirlineID(2), 
+		AirlineCode(3), 
+		ArrDelayed(4), 
+		DepDelayed(5), 
+		ArrDelayMinutes(6), 
+		FlightDate(7), 
+		DayOfWeek(8), 
+		CRSDepatureTime(9), 
+		ArrTime(10),
+		DepTime(11),
+		FlightId(12);
+		
+	    private final int value;
+	
+	    ColumnNames(final int newValue) {
+	        value = newValue;
+	    }
+	
+	    public int getValue() { return value; }
+	}
+	
 	private static final int COLUMNS_COUNT = 11;
 	
 	String[] values;

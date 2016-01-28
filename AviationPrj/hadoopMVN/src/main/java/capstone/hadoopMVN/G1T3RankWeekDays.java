@@ -22,7 +22,8 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import capstone.hadoopMVN.CassandraHelper.Pair;
+import capstone.hadoopMVN.FlightInformation.ColumnNames;
+import capstone.hadoopMVN.MapReduceHelper.Pair;
 import capstone.hadoopMVN.MapReduceHelper.TextArrayWritable;
 
 public class G1T3RankWeekDays extends Configured implements Tool {

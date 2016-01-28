@@ -20,6 +20,8 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import capstone.hadoopMVN.FlightInformation.ColumnNames;
+
 public class G2T4XYMeanArrivalDelay extends Configured implements Tool {
 	public static void main(String[] args) throws Exception {
 		int res = ToolRunner.run(new Configuration(), new G2T4XYMeanArrivalDelay(), args);

@@ -50,6 +50,8 @@ hadoop jar ~/jars/Capstone.jar capstoneHadoop.G2T4XYMeanArrivalDelay /TestData/i
 
 hadoop jar ~/jars/Capstone.jar capstoneHadoop.G3T1RankAirportsZipf /TestData/input.txt
 
+hadoop jar ~/jars/Capstone.jar capstoneHadoop.G3T2XYZBestTravel /TestData/input.txt /TestData/airportsXYZInput.txt
+
 // Verify and clear hdfs
 
 hdfs dfs -copyToLocal /Capstone/Output/TopAirports/part-r-00000 ~/
@@ -65,6 +67,7 @@ hdfs dfs -copyToLocal /Capstone/Output/MeanXYDelay/part-r-00000 ~/
 hdfs dfs -copyToLocal /Capstone/Tmp/RankAirportsZipf/part-r-00000 ~/
 hdfs dfs -copyToLocal /Capstone/Output/RankAirportsZipf/part-r-00000 ~/
 
+hdfs dfs -copyToLocal /Capstone/Output/FindFlight/part-r-00000 ~/
 
 
 nano part-r-00000

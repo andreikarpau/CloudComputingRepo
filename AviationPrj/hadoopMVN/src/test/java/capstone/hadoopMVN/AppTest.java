@@ -3,8 +3,14 @@ package capstone.hadoopMVN;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
-import capstone.hadoopMVN.ColumnNames;
+import capstone.hadoopMVN.FlightInformation.ColumnNames;
 import capstone.hadoopMVN.FlightInformation;
 import capstone.hadoopMVN.MapReduceHelper;
 import junit.framework.Test;
@@ -37,13 +43,29 @@ public class AppTest
 
     /**
      * Rigourous Test :-)
+     * @throws ParseException 
      */
-    public void testApp()
+    public void testApp() throws ParseException
     {
     	TestFilesParse();
-    	//TestCassandra();
+    	
+		DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+		
+		String string = "2006-07-03";
+		Date flightDate1 = format.parse(string);
+		
+		Calendar calendar = Calendar.getInstance(); 
+		calendar.setTime(flightDate1);
+		calendar.add(Calendar.DATE, 2);
+		Date flightDate2 = calendar.getTime();
+
+		String fl1 = format.format(flightDate1).trim();
+		String fl2 = format.format(flightDate2).trim();
+		
+		assertTrue(fl1.equals(string));
+		assertTrue(fl2.equals("2006-07-05"));	
     }
-    
+/*    
     private static void TestCassandra()
     {
     	String host = "54.210.238.87";
@@ -62,7 +84,7 @@ public class AppTest
         
         System.out.println("Write Complete");
     }
-    
+*/    
     private static void TestFilesParse()
     {
     	try 
