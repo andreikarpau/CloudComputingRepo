@@ -33,10 +33,29 @@ scp Capstone.jar namenode:~/jars
 
 # scp /home/askofen/Documents/EclipseWorkspace/hadoopMVN/target/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar namenode:~/jars
 
+# scp /home/askofen/Documents/EclipseWorkspace/connectCassandra/target/connectCassandra-0.0.1-SNAPSHOT-jar-with-dependencies.jar namenode:~/jars  
+
+// Run add to Cassandra
+# mvn ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar 172.31.15.51 9042 TopAirports columnsT1.txt ~/Capstone/Output/TopAirports/part-r-00000
+
 // Run
 
-# hadoop jar ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.hadoopMVN.G1T1RankAirports /TestData/input.txt stop 172.31.60.4 9042
+// Maven package
+hadoop jar ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.hadoopMVN.G1T1RankAirports /Data/input.txt
 
+hadoop jar ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.hadoopMVN.G1T3RankWeekDays /Data/input.txt
+
+hadoop jar ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.hadoopMVN.G2T1RankAirlinesFromX /Data/input.txt /airportsInput.txt
+
+hadoop jar ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.hadoopMVN.G2T3XYRankAirlinesArrPerf /Data/input.txt /airportsXYInput.txt
+
+hadoop jar ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.hadoopMVN.G2T4XYMeanArrivalDelay /Data/input.txt /airportsXYInput.txt
+
+hadoop jar ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.hadoopMVN.G3T1RankAirportsZipf /Data/input.txt
+
+hadoop jar ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.hadoopMVN.G3T2XYZBestTravel /Data/input.txt /airportsXYZInput.txt
+
+// Simple package
 
 hadoop jar ~/jars/Capstone.jar capstoneHadoop.G1T1RankAirports /TestData/input.txt
 
@@ -51,6 +70,7 @@ hadoop jar ~/jars/Capstone.jar capstoneHadoop.G2T4XYMeanArrivalDelay /TestData/i
 hadoop jar ~/jars/Capstone.jar capstoneHadoop.G3T1RankAirportsZipf /TestData/input.txt
 
 hadoop jar ~/jars/Capstone.jar capstoneHadoop.G3T2XYZBestTravel /TestData/input.txt /TestData/airportsXYZInput.txt
+
 
 // Verify and clear hdfs
 
@@ -67,6 +87,7 @@ hdfs dfs -copyToLocal /Capstone/Output/MeanXYDelay/part-r-00000 ~/
 hdfs dfs -copyToLocal /Capstone/Tmp/RankAirportsZipf/part-r-00000 ~/
 hdfs dfs -copyToLocal /Capstone/Output/RankAirportsZipf/part-r-00000 ~/
 
+hdfs dfs -copyToLocal /Capstone/Output/FindFlight/part-r-00000 ~/
 
 
 nano part-r-00000

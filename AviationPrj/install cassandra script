@@ -17,13 +17,15 @@ sudo apt-get install cassandra-tools=2.1.5 ## Optional utilities
 
 ----------------
 
+sudo reboot
 sudo service cassandra start
 sudo service cassandra stop
 
 cqlsh
-cqlsh 172.31.60.4 9042
-
+nodetool status
 ----------------
+
+cqlsh 172.31.15.51 9042
 
 sudo nano /etc/cassandra/cassandra.yaml
 
@@ -33,10 +35,59 @@ rpc_address: 172.31.60.4
 endpoint_snitch: Ec2Snitch
 rpc_port: 9160
 
-
 ----------------
 
 sudo ufw enable
 sudo ufw allow 9042
+
+----------------
+
+// Quires
+CREATE KEYSPACE keyspaceCapstone WITH replication = {  'class': 'SimpleStrategy', 'replication_factor' : '3' };
+DROP TABLE keyspacecapstone.users;
+DESCRIBE keyspaces;
+
+
+select * from system.schema_columnfamilies where keyspace_name = 'keyspacecapstone';
+
+
+// 
+
+use keyspaceCapstone;
+
+CREATE TABLE keyspaceCapstone.topfromx (fromAir varchar, airline varchar, perf varchar PRIMARY KEY);
+
+CREATE TABLE keyspaceCapstone.topxy (fromAir varchar PRIMARY KEY, toAir varchar, airline varchar, perf varchar);
+
+CREATE TABLE keyspaceCapstone.mean (fromAir varchar PRIMARY KEY, toAir varchar, mean varchar);
+
+CREATE TABLE keyspaceCapstone.findflight (date1 varchar, fromAir1 varchar PRIMARY KEY, toAir1 varchar, time1 varchar, flightId1 varchar, date2 varchar, fromAir2 varchar, toAir2 varchar, time2 varchar, flightId2 varchar);
+
+
+COPY topfromx FROM '~/Capstone/Output/TopAirlinesFromX/part-r-00000';
+COPY topxy FROM '~/Capstone/Output/TopAirlinesXY/part-r-00000';
+COPY mean FROM '~/Capstone/Output/MeanXYDelay/part-r-00000';
+COPY findflight FROM '~/Capstone/Output/FindFlight/part-r-00000';
+
+
+select * FROM topfromx;
+select * FROM topxy;
+select * FROM mean;
+select * FROM findflight;
+
+DROP TABLE topfromx;
+DROP TABLE topxy;
+DROP TABLE mean;
+DROP TABLE findflight;
+
+//-------------------------------------------------------------
+INSERT INTO keyspacecapstone.users ('user1');
+INSERT INTO keyspacecapstone.users (user_name) VALUES ('user1');
+select * from keyspacecapstone.users
+
+
+
+
+
 
 

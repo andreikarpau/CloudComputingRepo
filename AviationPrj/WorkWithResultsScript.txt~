@@ -1,0 +1,26 @@
+ec2-52-7-209-179.compute-1.amazonaws.com ip-172-31-15-51
+ec2-52-71-242-204.compute-1.amazonaws.com ip-172-31-15-52
+ec2-52-23-164-150.compute-1.amazonaws.com ip-172-31-56-130
+ec2-52-23-194-170.compute-1.amazonaws.com ip-172-31-56-131
+ec2-54-86-77-254.compute-1.amazonaws.com ip-172-31-56-132
+
+
+
+nano ~/Capstone/Output/TopAirports/part-r-00000
+nano ~/Capstone/Output/TopWeekDays/part-r-00000
+nano ~/Capstone/Output/TopAirlinesFromX/part-r-00000
+nano ~/Capstone/Output/TopAirlinesXY/part-r-00000
+nano ~/Capstone/Output/MeanXYDelay/part-r-00000
+nano ~/Capstone/Output/RankAirportsZipf/part-r-00000
+nano ~/Capstone/Output/FindFlight/part-r-00000
+
+java -jar hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar capstone.connectCassandra.App 172.31.54.39 9042 TopAirlinesFromX TopAirlinesFromX.txt  ~/Capstone/Output/TopAirlinesFromX/part-r-00000
+
+mvn ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar 172.31.54.39 9042 TopAirlinesXY TopAirlinesXY.txt  ~/Capstone/Output/TopAirlinesXY/part-r-00000
+
+mvn ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar 172.31.54.39 9042 MeanXYDelay MeanXYDelay.txt  ~/Capstone/Output/MeanXYDelay/part-r-00000
+
+mvn ~/jars/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar 172.31.54.39 9042 FindFlight FindFlight.txt  ~/Capstone/Output/FindFlight/part-r-00000
+
+
+
