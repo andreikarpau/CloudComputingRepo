@@ -1,0 +1,36 @@
+export PATH=$PATH:/usr/local/scala/bin
+export PATH=$PATH:/usr/local/spark/bin
+source ~/.bashrc
+spark-shell
+:q
+
+//////////////////////////////////////
+
+scp /home/askofen/Documents/EclipseWorkspace/task2/target/task2-0.0.1-jar-with-dependencies.jar namenode:~/
+
+sudo mv ~/*.jar ~/../jars
+
+sudo rm -r ~/../jars/*
+sudo rm ~/*.jar
+
+/////////////////////////////////////
+Spark run app
+
+sudo su
+cd ./../spark/
+
+spark-shell
+
+--master local[2]
+--master spark://172.31.50.99:7077
+
+su spark
+
+spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar localhost 9092 
+
+
+
+///////////////////////////////////////
+Kafka
+
+export PATH=$PATH:/usr/hdp/current/kafka-broker/bin

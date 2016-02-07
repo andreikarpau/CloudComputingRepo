@@ -1,0 +1,6 @@
+date1
+origin1
+destination1
+arrTime1
+flightId1
+

@@ -80,11 +80,13 @@ DROP TABLE topxy;
 DROP TABLE mean;
 DROP TABLE findflight;
 
-
+//-------------------------------------------------------------
 INSERT INTO keyspacecapstone.users ('user1');
 INSERT INTO keyspacecapstone.users (user_name) VALUES ('user1');
 select * from keyspacecapstone.users
 
+
+//--------------------------------------------------------------
 
 
 

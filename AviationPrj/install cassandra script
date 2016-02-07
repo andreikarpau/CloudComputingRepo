@@ -86,7 +86,9 @@ INSERT INTO keyspacecapstone.users (user_name) VALUES ('user1');
 select * from keyspacecapstone.users
 
 
+//--------------------------------------------------------------
 
+java -jar connectCassandra-0.0.1-SNAPSHOT-jar-with-dependencies.jar
 
 
 

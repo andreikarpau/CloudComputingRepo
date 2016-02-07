@@ -1,0 +1,51 @@
+sudo yum update
+
+sudo yum install gdisk
+lsblk
+sudo gdisk /dev/xvda
+: p
+: o
+: n
+: 1
+: 2048
+: maximum value
+: c
+: lxroot
+: x
+: g
+: w
+
+sudo yum install nano
+sudo yum install ntp
+sudo chkconfig ntpd on
+sudo chkconfig iptables off
+sudo /etc/init.d/iptables stop
+sudo service ntpd start
+
+scp ~/.ssh/AskofenKey.pem ~/.ssh/config namenode:~/.ssh
+sudo mv ./.ssh/AskofenKey.pem ./.ssh/id_rsa
+chmod 600 ~/.ssh/config
+
+
+cat /etc/redhat-release
+
+sudo yum install wget
+
+sudo wget -nv http://public-repo-1.hortonworks.com/ambari/centos6/2.x/updates/2.1.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
+
+/*
+sudo wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.1.0/ambari.repo -O /etc/yum.repos.d/ambari.repo*/
+
+sudo yum install ambari-server
+
+sudo ambari-server setup
+sudo ambari-server start
+
+// sudo ambari-server stop
+// sudo ambari-agent stop
+
+http://ec2-52-7-209-179.compute-1.amazonaws.com:8080/#/login 
+admin
+admin
+
+
