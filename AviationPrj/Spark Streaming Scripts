@@ -4,14 +4,26 @@ source ~/.bashrc
 spark-shell
 :q
 
-//////////////////////////////////////
+// Mount data ////////////////////////
+sudo mount /dev/xvdg ~/ClearedData
 
-scp /home/askofen/Documents/EclipseWorkspace/task2/target/task2-0.0.1-jar-with-dependencies.jar namenode:~/
+///////////////////////////////////////
 
-sudo mv ~/*.jar ~/../jars
+scp /home/askofen/Documents/EclipseWorkspace/task2/src/main/java/capstone/task2/* namenode:~/
+
+sudo rm -r ~/datasciencecoursera/AviationPrj/task2/src/main/java/capstone/task2/
+
+sudo mv ~/*.java ~/datasciencecoursera/AviationPrj/task2/src/main/java/capstone/task2/
+
+cd /home/ec2-user/datasciencecoursera/AviationPrj/task2
 
 sudo rm -r ~/../jars/*
-sudo rm ~/*.jar
+
+sudo rm -r ~/datasciencecoursera/AviationPrj/task2/target
+
+sudo mvn package
+sudo cp /home/ec2-user/datasciencecoursera/AviationPrj/task2/target/task2-0.0.1-jar-with-dependencies.jar ~/../jars/
+
 
 /////////////////////////////////////
 Spark run app
@@ -24,7 +36,7 @@ spark-shell
 --master local[2]
 --master spark://172.31.50.99:7077
 
-su spark
+sudo su spark
 
 spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar localhost 9092 
 
@@ -33,4 +45,30 @@ spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../j
 ///////////////////////////////////////
 Kafka
 
+config:
+old: export KAFKA_KERBEROS_PARAMS={{kafka_kerberos_params}}
+new: export KAFKA_KERBEROS_PARAMS="-Djava.security.auth.login.config=/usr/hdp/current/kafka-broker/config/kafka_jaas.conf"
+
 export PATH=$PATH:/usr/hdp/current/kafka-broker/bin
+
+////////////// Run application
+java -cp ~/../jars/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.50.99:6667 sandbox.hortonworks.com:2181
+
+/////////////////Create Topic
+kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic flightsTopic
+
+/////////////Check Topics
+kafka-topics.sh --list --zookeeper localhost:2181
+
+///////////////// Console Producer
+kafka-console-producer.sh --broker-list 172.31.50.99:6667 --topic flightsTopic
+
+///////////////// Console Consumer
+kafka-console-consumer.sh --zookeeper localhost:2181 --topic flightsTopic --from-beginning
+
+
+
+
+
+
+

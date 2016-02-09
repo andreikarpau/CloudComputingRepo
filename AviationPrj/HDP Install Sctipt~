@@ -1,19 +1,10 @@
 sudo yum update
 
+/////
 sudo yum install gdisk
 lsblk
 sudo gdisk /dev/xvda
-: p
-: o
-: n
-: 1
-: 2048
-: maximum value
-: c
-: lxroot
-: x
-: g
-: w
+/////
 
 sudo yum install nano
 sudo yum install ntp
