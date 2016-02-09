@@ -11,7 +11,7 @@ sudo mount /dev/xvdg ~/ClearedData
 
 scp /home/askofen/Documents/EclipseWorkspace/task2/src/main/java/capstone/task2/* namenode:~/
 
-sudo rm -r ~/datasciencecoursera/AviationPrj/task2/src/main/java/capstone/task2/
+sudo rm -r ~/datasciencecoursera/AviationPrj/task2/src/main/java/capstone/task2/*
 
 sudo mv ~/*.java ~/datasciencecoursera/AviationPrj/task2/src/main/java/capstone/task2/
 
@@ -38,7 +38,7 @@ spark-shell
 
 sudo su spark
 
-spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar localhost 9092 
+spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99 2181
 
 
 
@@ -52,7 +52,7 @@ new: export KAFKA_KERBEROS_PARAMS="-Djava.security.auth.login.config=/usr/hdp/cu
 export PATH=$PATH:/usr/hdp/current/kafka-broker/bin
 
 ////////////// Run application
-java -cp ~/../jars/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.50.99:6667 sandbox.hortonworks.com:2181
+java -cp ~/../jars/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.50.99:6667 sandbox.hortonworks.com:2181 /home/TestData/input.txt
 
 /////////////////Create Topic
 kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic flightsTopic
@@ -64,7 +64,7 @@ kafka-topics.sh --list --zookeeper localhost:2181
 kafka-console-producer.sh --broker-list 172.31.50.99:6667 --topic flightsTopic
 
 ///////////////// Console Consumer
-kafka-console-consumer.sh --zookeeper localhost:2181 --topic flightsTopic --from-beginning
+kafka-console-consumer.sh --zookeeper 172.31.50.99:2181 --topic flightsTopic --from-beginning
 
 
 

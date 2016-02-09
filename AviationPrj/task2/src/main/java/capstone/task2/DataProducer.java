@@ -9,7 +9,10 @@ import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 
 public class DataProducer {
     private static final Logger LOG = Logger.getLogger(DataProducer.class);
@@ -23,6 +26,13 @@ public class DataProducer {
 			System.exit(-1);
 		}
 
+		ConsoleAppender console = new ConsoleAppender(); //create appender
+		String PATTERN = "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n";
+		console.setLayout(new PatternLayout(PATTERN)); 
+		console.setThreshold(Level.DEBUG);
+		console.activateOptions();
+		LOG.addAppender(console);
+		
 		LOG.debug("Creating Properties");
 
 		Properties props = new Properties();
@@ -59,8 +69,7 @@ public class DataProducer {
 				if (line.isEmpty())
 					continue;
 				
-				ProduceFile(line);
-				LOG.debug("Processing file:" + line);				
+				ProduceFile(line);		
 			}			
 		} finally {
 			bufferReader.close();
@@ -73,6 +82,7 @@ public class DataProducer {
 	private void ProduceFile(String fileName) throws IOException
 	{
 		BufferedReader bufferReader = new BufferedReader(new FileReader(fileName));
+		LOG.debug("Start Processing file:" + fileName);				
 
 		try {
 			String line;	
@@ -87,5 +97,6 @@ public class DataProducer {
 		} finally {
 			bufferReader.close();
 		}
+		LOG.debug("End Processing file:" + fileName);		
 	}
 }

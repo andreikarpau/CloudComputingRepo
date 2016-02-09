@@ -23,9 +23,6 @@ public class G1T1RankAirports {
 	    if (args.length < 2) {
 	      System.exit(1);
 	    }
-
-	    //import org.apache.spark.examples.streaming.StreamingExamples;
-	    //StreamingExamples.setStreamingLogLevels();
 	    
 	    SparkConf sparkConf = new SparkConf().setAppName("G1T1RankAirports");
 
@@ -75,6 +72,7 @@ public class G1T1RankAirports {
 	    lines.print();
 	    jssc.start();
 	    jssc.awaitTermination();
+	    jssc.stop();
 	  }
 }
 
