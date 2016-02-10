@@ -15,8 +15,10 @@ import org.apache.hadoop.io.Text;
 import capstone.task2.FlightInformation.ColumnNames;
 
 public class MapReduceHelper {
+	public static final String TOPIC = "flightsTopic";
+	
 	private MapReduceHelper() {}
-
+	
 	public static String readHDFSFile(String path, Configuration conf) throws IOException{
 	    Path pt=new Path(path);
 	    FileSystem fs = FileSystem.get(pt.toUri(), conf);
@@ -72,7 +74,8 @@ public class MapReduceHelper {
         }
     }
     
-	public static class Pair<A extends Comparable<? super A>, B extends Comparable<? super B>> implements Comparable<Pair<A, B>> {		
+	public static class Pair<A extends Comparable<? super A>, B extends Comparable<? super B>> implements Comparable<Pair<A, B>> {
+		
 		public final A first;
 		public final B second;
 	
@@ -85,13 +88,13 @@ public class MapReduceHelper {
 				A first, B second) {
 			return new Pair<A, B>(first, second);
 		}
-
+	
 		@Override
-		public int compareTo(Pair<A, B> o) {
+		public int compareTo(MapReduceHelper.Pair<A, B> o) {
 			int cmp = o == null ? 1 : (this.first).compareTo(o.first);
 			return cmp == 0 ? (this.second).compareTo(o.second) : cmp;
 		}
-	
+		
 		@Override
 		public int hashCode() {
 			return 31 * hashcode(first) + hashcode(second);
@@ -121,3 +124,4 @@ public class MapReduceHelper {
 		}
 	}
 }
+
