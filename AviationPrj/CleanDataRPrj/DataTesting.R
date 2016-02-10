@@ -5,7 +5,8 @@ tb1 <- fread("Test1.csv")
 tb2 <- fread("Test2.csv")
 
 print("G1T1 ACV origin + dest:")
-print(sum(tb1$V1 == "ACV") + sum(tb1$V2 == "ACV") + sum(tb2$V1 == "ACV") + sum(tb2$V2 == "ACV"))
+g1t1Param = "ATL"
+print(sum(tb1$V1 == g1t1Param) + sum(tb1$V2 == g1t1Param) + sum(tb2$V1 == g1t1Param) + sum(tb2$V2 == g1t1Param))
 
 
 print("G1T3 day 6 on time arrival perf:")

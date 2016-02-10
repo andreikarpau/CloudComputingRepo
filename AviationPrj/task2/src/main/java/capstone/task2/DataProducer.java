@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
@@ -16,10 +18,9 @@ import org.apache.log4j.PatternLayout;
 
 public class DataProducer {
     private static final Logger LOG = Logger.getLogger(DataProducer.class);
-    private final String TOPIC = "flightsTopic";
 	private Producer<String, String> producer;
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		if (args.length < 3) {
 
 			System.out.println("No input file");
@@ -55,11 +56,12 @@ public class DataProducer {
 		producer = new Producer<String, String>(config);
 	}
 	
-	public void ProduceFromFile(String inputFile) throws IOException{
+	public void ProduceFromFile(String inputFile) throws IOException, InterruptedException{
 		LOG.debug("Reading and Sending Data");
 
 		BufferedReader bufferReader = new BufferedReader(new FileReader(inputFile));
-
+		ExecutorService executor = Executors.newFixedThreadPool(10);
+		
 		try {
 			String line;	
 
@@ -69,34 +71,58 @@ public class DataProducer {
 				if (line.isEmpty())
 					continue;
 				
-				ProduceFile(line);		
+				Runnable worker = new ProduceFileThread(line, producer);	
+				executor.execute(worker);
 			}			
 		} finally {
 			bufferReader.close();
 		}
 		
+        executor.shutdown();
+        while (!executor.isTerminated()) {
+        	Thread.sleep(10000);
+        }
+		
 		LOG.debug("Closing Producer");
 		producer.close();
 	}
 	
-	private void ProduceFile(String fileName) throws IOException
-	{
-		BufferedReader bufferReader = new BufferedReader(new FileReader(fileName));
-		LOG.debug("Start Processing file:" + fileName);				
-
-		try {
-			String line;	
-
-			while ((line = bufferReader.readLine()) != null) {
-				if (line.isEmpty())
-					continue;
-
-				KeyedMessage<String, String> data = new KeyedMessage<String, String>(TOPIC, line);
-				producer.send(data);
-			}			
-		} finally {
-			bufferReader.close();
+	private static class ProduceFileThread implements Runnable {
+		private String inputFile;
+		Producer<String, String> producer;
+	    
+		public ProduceFileThread(String fileName, Producer<String, String> newProducer){
+			inputFile = fileName;
+			producer = newProducer;
 		}
-		LOG.debug("End Processing file:" + fileName);		
+		
+		public void run() {
+			try {
+				ProduceFile(inputFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		private void ProduceFile(String fileName) throws IOException
+		{
+			BufferedReader bufferReader = new BufferedReader(new FileReader(fileName));
+			LOG.debug("Start Processing file:" + fileName);				
+
+			try {
+				String line;	
+
+				while ((line = bufferReader.readLine()) != null) {
+					if (line.isEmpty())
+						continue;
+
+					KeyedMessage<String, String> data = new KeyedMessage<String, String>(MapReduceHelper.TOPIC, line);
+					producer.send(data);
+				}			
+			} finally {
+				bufferReader.close();
+			}
+			LOG.debug("End Processing file:" + fileName);		
+		}
 	}
 }

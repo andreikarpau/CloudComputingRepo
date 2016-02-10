@@ -11,6 +11,13 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
+
+import scala.Tuple2;
+
+import com.google.common.base.Optional;
 
 import capstone.task2.FlightInformation.ColumnNames;
 
@@ -18,6 +25,63 @@ public class MapReduceHelper {
 	public static final String TOPIC = "flightsTopic";
 	
 	private MapReduceHelper() {}
+	
+	public static <A, B> Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>> GetSortAndFilter10Function(){
+		return new Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>>() {
+			private static final long serialVersionUID = 1L;
+
+			public JavaPairRDD<A, B> call(JavaPairRDD<A, B> pairs) throws Exception {
+				return pairs.flatMapToPair(MapReduceHelper.<A, B>GetRDDFlipFunction()).
+				sortByKey(false).flatMapToPair(MapReduceHelper.<B, A>GetRDDFlipFunction());
+			}
+		};
+	}
+
+	public static Function<JavaPairRDD<String, Integer>, JavaPairRDD<String, Integer>> GetRDDJoinFunction(){
+		return new Function<JavaPairRDD<String, Integer>, JavaPairRDD<String, Integer>>() {
+			private static final long serialVersionUID = 1L;
+			JavaPairRDD<String, Integer> prevRdd = null;
+			
+			public JavaPairRDD<String, Integer> call(JavaPairRDD<String, Integer> rdd) throws Exception {
+				JavaPairRDD<String, Integer> newRdd = rdd;		
+
+				if (prevRdd != null) {
+					newRdd = rdd.fullOuterJoin(prevRdd).flatMapToPair(new PairFlatMapFunction<Tuple2<String, Tuple2<Optional<Integer>, Optional<Integer>>>, String, Integer>() {
+						private static final long serialVersionUID = 1L;
+
+						public Iterable<Tuple2<String, Integer>> call(Tuple2<String, Tuple2<Optional<Integer>, Optional<Integer>>> pair) throws Exception {
+									Integer value = 0;
+
+									if (pair._2()._1().isPresent())
+										value += pair._2()._1().get();
+
+									if (pair._2()._2().isPresent())
+										value += pair._2()._2().get();
+
+									ArrayList<Tuple2<String, Integer>> list = new ArrayList<Tuple2<String, Integer>>();
+									list.add(new Tuple2<String, Integer>(pair._1(), value));
+									return list;
+						}
+					});
+				}
+								
+				prevRdd = newRdd;
+				return newRdd;
+			}
+		};
+	}
+	
+	public static <A, B> PairFlatMapFunction<Tuple2<A, B>, B, A> GetRDDFlipFunction(){
+		return new PairFlatMapFunction<Tuple2<A, B>, B, A>() {
+			private static final long serialVersionUID = 1L;
+
+			public Iterable<Tuple2<B, A>> call(Tuple2<A, B> pair) throws Exception {
+				ArrayList<Tuple2<B, A>> list = new ArrayList<Tuple2<B, A>>();
+				list.add(new Tuple2<B, A>(pair._2(), pair._1()));
+				return list;
+			}
+		};
+	}
 	
 	public static String readHDFSFile(String path, Configuration conf) throws IOException{
 	    Path pt=new Path(path);

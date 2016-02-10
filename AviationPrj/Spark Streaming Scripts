@@ -38,7 +38,7 @@ spark-shell
 
 sudo su spark
 
-spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99 2181
+spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 cassandraIp cassandraPort
 
 
 

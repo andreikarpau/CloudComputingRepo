@@ -38,7 +38,7 @@ spark-shell
 
 sudo su spark
 
-spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99 2181
+spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99 2181 cassandraIp cassandraPort
 
 
 
@@ -64,7 +64,7 @@ kafka-topics.sh --list --zookeeper localhost:2181
 kafka-console-producer.sh --broker-list 172.31.50.99:6667 --topic flightsTopic
 
 ///////////////// Console Consumer
-kafka-console-consumer.sh --zookeeper localhost:2181 --topic flightsTopic --from-beginning
+kafka-console-consumer.sh --zookeeper 172.31.50.99:2181 --topic flightsTopic --from-beginning
 
 
 
