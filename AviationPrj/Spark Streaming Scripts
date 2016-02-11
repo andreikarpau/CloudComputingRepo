@@ -38,7 +38,7 @@ spark-shell
 
 sudo su spark
 
-spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 cassandraIp cassandraPort
+spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 cassandraIp cassandraPort 5 flightsTopic2
 
 
 
@@ -52,7 +52,7 @@ new: export KAFKA_KERBEROS_PARAMS="-Djava.security.auth.login.config=/usr/hdp/cu
 export PATH=$PATH:/usr/hdp/current/kafka-broker/bin
 
 ////////////// Run application
-java -cp ~/../jars/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.50.99:6667 sandbox.hortonworks.com:2181 /home/TestData/input.txt
+java -cp ~/../jars/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.50.99:6667 sandbox.hortonworks.com:2181 /home/TestData/input.txt flightsTopic2
 
 /////////////////Create Topic
 kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic flightsTopic

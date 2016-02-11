@@ -16,9 +16,10 @@ import org.apache.spark.streaming.api.java.JavaPairReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
 import org.apache.spark.storage.StorageLevel;
+
 import capstone.task2.FlightInformation;
 import capstone.task2.FlightInformation.ColumnNames;
-import kafka.serializer.DefaultDecoder;
+import kafka.serializer.StringDecoder;
 import scala.Tuple2;
 
 public class G1T1RankAirports {
@@ -41,16 +42,21 @@ public class G1T1RankAirports {
 			numThreads = Integer.parseInt(args[4]);
 		}
 
+		String topicName = MapReduceHelper.TOPIC;
+		if (6 <= args.length) {
+			topicName = args[5];
+		}
+		
 		Map<String, String> paramsMap = new HashMap<String, String>();
+		paramsMap.put("auto.offset.reset", "smallest");
 		paramsMap.put("zookeeper.connect", args[0]);
 		paramsMap.put("group.id", args[1]);
-		paramsMap.put("auto.offset.reset", "smallest");
 		paramsMap.put("zookeeper.connection.timeout.ms", "10000");
 
 		Map<String, Integer> topicMap = new HashMap<String, Integer>();
-		topicMap.put(MapReduceHelper.TOPIC, numThreads);
-
-		JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, String.class, String.class, DefaultDecoder.class, DefaultDecoder.class, paramsMap, topicMap, StorageLevel.MEMORY_AND_DISK_SER_2());
+		topicMap.put(topicName, numThreads);
+		
+		JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap, StorageLevel.MEMORY_AND_DISK_SER_2());
 		//JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, args[0], args[1], topicMap);
 
 		JavaDStream<String> lines = messages.map(new Function<Tuple2<String, String>, String>() {

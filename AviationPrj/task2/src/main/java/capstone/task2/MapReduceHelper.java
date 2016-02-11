@@ -22,7 +22,7 @@ import com.google.common.base.Optional;
 import capstone.task2.FlightInformation.ColumnNames;
 
 public class MapReduceHelper {
-	public static final String TOPIC = "flightsTopic";
+	public static final String TOPIC = "flightsTopic1";
 	
 	private MapReduceHelper() {}
 	

@@ -49,7 +49,7 @@ public class DataProducer {
 		String inputFile = args[2];
 		
 		if (4 <= args.length)
-			TopicName = args[4];
+			TopicName = args[3];
 		
 		DataProducer dataProducer = new DataProducer(config);
 		dataProducer.ProduceFromFile(inputFile);
