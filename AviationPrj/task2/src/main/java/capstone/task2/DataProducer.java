@@ -19,6 +19,7 @@ import org.apache.log4j.PatternLayout;
 public class DataProducer {
     private static final Logger LOG = Logger.getLogger(DataProducer.class);
 	private Producer<String, String> producer;
+	private static String TopicName = MapReduceHelper.TOPIC;
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
 		if (args.length < 3) {
@@ -46,6 +47,9 @@ public class DataProducer {
 
 		LOG.debug("Creating Producer");
 		String inputFile = args[2];
+		
+		if (4 <= args.length)
+			TopicName = args[4];
 		
 		DataProducer dataProducer = new DataProducer(config);
 		dataProducer.ProduceFromFile(inputFile);
@@ -116,7 +120,7 @@ public class DataProducer {
 					if (line.isEmpty())
 						continue;
 
-					KeyedMessage<String, String> data = new KeyedMessage<String, String>(MapReduceHelper.TOPIC, line);
+					KeyedMessage<String, String> data = new KeyedMessage<String, String>(TopicName, line);
 					producer.send(data);
 				}			
 			} finally {
