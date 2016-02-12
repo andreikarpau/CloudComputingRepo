@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -11,6 +13,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -23,21 +26,56 @@ import capstone.task2.FlightInformation.ColumnNames;
 
 public class MapReduceHelper {
 	public static final String TOPIC = "flightsTopic1";
+	public static final String FLUSH_RDD_FLAG = "flush.rdd.needed";
 	
 	private MapReduceHelper() {}
 	
-	public static <A, B> Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>> GetSortAndFilter10Function(){
+	public static void fillBaseStreamingParams(String[] args, Map<String, String> paramsMap, SparkConf sparkConf, Map<String, Integer> topicMap){
+		paramsMap = new HashMap<String, String>();
+		paramsMap.put("auto.offset.reset", "smallest");
+		paramsMap.put("zookeeper.connect", args[0]);
+		paramsMap.put("group.id", args[1]);
+		paramsMap.put("zookeeper.connection.timeout.ms", "10000");
+
+		sparkConf.set("spark.connection.cassandra.host", args[2]).set("spark.cassandra.connection.port", args[3]);
+		sparkConf.set(FLUSH_RDD_FLAG, "false");
+		
+		int numThreads = 1;
+
+		if (5 <= args.length) {
+			numThreads = Integer.parseInt(args[4]);
+		}
+
+		String topicName = MapReduceHelper.TOPIC;
+		if (6 <= args.length) {
+			topicName = args[5];
+		}
+
+		topicMap.put(topicName, numThreads);
+	}
+	
+	public static Function<Tuple2<String, String>, String> getBaseInputPreprocessingFunction(){
+		return new Function<Tuple2<String, String>, String>() {
+			private static final long serialVersionUID = 1L;
+
+			public String call(Tuple2<String, String> arg0) throws Exception {
+				return arg0._2();
+			}
+		};
+	}
+	
+	public static <A, B> Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>> getSortFunction(){
 		return new Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>>() {
 			private static final long serialVersionUID = 1L;
 
 			public JavaPairRDD<A, B> call(JavaPairRDD<A, B> pairs) throws Exception {
-				return pairs.flatMapToPair(MapReduceHelper.<A, B>GetRDDFlipFunction()).
-				sortByKey(false).flatMapToPair(MapReduceHelper.<B, A>GetRDDFlipFunction());
+				return pairs.flatMapToPair(MapReduceHelper.<A, B>getRDDFlipFunction()).
+				sortByKey(false).flatMapToPair(MapReduceHelper.<B, A>getRDDFlipFunction());
 			}
 		};
 	}
 
-	public static Function<JavaPairRDD<String, Integer>, JavaPairRDD<String, Integer>> GetRDDJoinFunction(){
+	public static Function<JavaPairRDD<String, Integer>, JavaPairRDD<String, Integer>> getRDDJoinWithPreviousFunction(){
 		return new Function<JavaPairRDD<String, Integer>, JavaPairRDD<String, Integer>>() {
 			private static final long serialVersionUID = 1L;
 			JavaPairRDD<String, Integer> prevRdd = null;
@@ -63,15 +101,19 @@ public class MapReduceHelper {
 									return list;
 						}
 					});
+					
+					if (rdd.take(1).isEmpty() && !newRdd.take(1).isEmpty()){
+						rdd.context().getConf().set(FLUSH_RDD_FLAG, "true");
+					}
 				}
-								
+
 				prevRdd = newRdd;
 				return newRdd;
 			}
 		};
 	}
 	
-	public static <A, B> PairFlatMapFunction<Tuple2<A, B>, B, A> GetRDDFlipFunction(){
+	public static <A, B> PairFlatMapFunction<Tuple2<A, B>, B, A> getRDDFlipFunction(){
 		return new PairFlatMapFunction<Tuple2<A, B>, B, A>() {
 			private static final long serialVersionUID = 1L;
 
@@ -137,7 +179,7 @@ public class MapReduceHelper {
             set(texts);
         }
     }
-    
+    /*
 	public static class Pair<A extends Comparable<? super A>, B extends Comparable<? super B>> implements Comparable<Pair<A, B>> {
 		
 		public final A first;
@@ -186,6 +228,6 @@ public class MapReduceHelper {
 		public String toString() {
 			return "(" + first + ", " + second + ')';
 		}
-	}
+	}*/
 }
 

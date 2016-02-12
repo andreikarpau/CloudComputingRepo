@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.streaming.Duration;
@@ -28,44 +26,16 @@ public class G1T1RankAirports {
 			System.exit(1);
 		}
 
-		SparkConf sparkConf = new SparkConf().setAppName("G1T1RankAirports")
-				.set("spark.connection.cassandra.host", args[2])
-				.set("spark.cassandra.connection.port", args[3]);
-
-		// Create the context with 2 seconds batch size
-		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf,
-				new Duration(5000));
-
-		int numThreads = 1;
-
-		if (5 <= args.length) {
-			numThreads = Integer.parseInt(args[4]);
-		}
-
-		String topicName = MapReduceHelper.TOPIC;
-		if (6 <= args.length) {
-			topicName = args[5];
-		}
-		
 		Map<String, String> paramsMap = new HashMap<String, String>();
-		paramsMap.put("auto.offset.reset", "smallest");
-		paramsMap.put("zookeeper.connect", args[0]);
-		paramsMap.put("group.id", args[1]);
-		paramsMap.put("zookeeper.connection.timeout.ms", "10000");
-
+		SparkConf sparkConf = new SparkConf().setAppName("G1T1RankAirports");
 		Map<String, Integer> topicMap = new HashMap<String, Integer>();
-		topicMap.put(topicName, numThreads);
 		
+		MapReduceHelper.fillBaseStreamingParams(args, paramsMap, sparkConf, topicMap);
+		
+		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 		JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap, StorageLevel.MEMORY_AND_DISK_SER_2());
-		//JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, args[0], args[1], topicMap);
 
-		JavaDStream<String> lines = messages.map(new Function<Tuple2<String, String>, String>() {
-			private static final long serialVersionUID = 1L;
-
-			public String call(Tuple2<String, String> arg0) throws Exception {
-				return arg0._2();
-			}
-		});
+		JavaDStream<String> lines = messages.map(MapReduceHelper.getBaseInputPreprocessingFunction());
 
 		JavaPairDStream<String, Integer> sums = lines.flatMapToPair(
 				new PairFlatMapFunction<String, String, Integer>() {
@@ -100,11 +70,9 @@ public class G1T1RankAirports {
 						}
 		});
 	
-		Function<JavaPairRDD<String, Integer>, JavaPairRDD<String, Integer>> transform = MapReduceHelper.GetRDDJoinFunction();
-		
-		JavaPairDStream<String, Integer> fullRDD = sums.transformToPair(transform);	
-		JavaPairDStream<String, Integer> sorted = fullRDD.transformToPair(MapReduceHelper.<String, Integer>GetSortAndFilter10Function());
-		
+		JavaPairDStream<String, Integer> fullRDD = sums.transformToPair(MapReduceHelper.getRDDJoinWithPreviousFunction());	
+		JavaPairDStream<String, Integer> sorted = fullRDD.transformToPair(MapReduceHelper.<String, Integer>getSortFunction());
+
 		sorted.print();
 		jssc.start();
 		jssc.awaitTermination();
