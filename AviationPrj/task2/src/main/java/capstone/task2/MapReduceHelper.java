@@ -1,10 +1,10 @@
 package capstone.task2;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -19,19 +19,27 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import scala.Tuple2;
+import capstone.task2.FlightInformation.ColumnNames;
 
 import com.google.common.base.Optional;
 
-import capstone.task2.FlightInformation.ColumnNames;
-
 public class MapReduceHelper {
+	public static enum SummingToUse 
+	{ 
+		G1T1, 
+		G1T3
+	}
+	
+	public static final String INPUT_PARAMS = "inputParams";
 	public static final String TOPIC = "flightsTopic1";
 	public static final String FLUSH_RDD_FLAG = "flush.rdd.needed";
+	public static Boolean flushRDD = false;
+	
+	public static SummingToUse summingToUse;
 	
 	private MapReduceHelper() {}
 	
-	public static void fillBaseStreamingParams(String[] args, Map<String, String> paramsMap, SparkConf sparkConf, Map<String, Integer> topicMap){
-		paramsMap = new HashMap<String, String>();
+	public static void fillBaseStreamingParams(String[] args, Map<String, String> paramsMap, SparkConf sparkConf, Map<String, Integer> topicMap, String folderName) throws IOException{
 		paramsMap.put("auto.offset.reset", "smallest");
 		paramsMap.put("zookeeper.connect", args[0]);
 		paramsMap.put("group.id", args[1]);
@@ -51,6 +59,27 @@ public class MapReduceHelper {
 			topicName = args[5];
 		}
 
+		if (7 <= args.length) {
+			String fileName = args[6];
+			String cachedStr = "";
+			
+			BufferedReader bufferReader = new BufferedReader(new FileReader(fileName));
+
+			try {
+				String line;
+
+				while ((line = bufferReader.readLine()) != null) {
+					if (line.isEmpty())
+						continue;
+
+					cachedStr = cachedStr + ";" + line;
+				}
+			} finally {
+				bufferReader.close();
+				sparkConf.set(INPUT_PARAMS, cachedStr);
+			}
+		}
+		
 		topicMap.put(topicName, numThreads);
 	}
 	
@@ -63,47 +92,69 @@ public class MapReduceHelper {
 			}
 		};
 	}
+
+	public static <A, B> B sumPairValues(Tuple2<A, Tuple2<Optional<B>, Optional<B>>> pair) throws Exception {
+		if (summingToUse == SummingToUse.G1T1)
+		{
+			Integer value = 0;
+			if (pair._2()._1().isPresent())
+				value += (Integer)pair._2()._1().get();
+
+			if (pair._2()._2().isPresent())
+				value += (Integer)pair._2()._2().get();
+			
+			return (B)value;
+		}
+			
+		if (summingToUse == SummingToUse.G1T3)
+		{
+			Tuple2<Long, Integer> value = new Tuple2<Long, Integer>(0L, 0);
+			if (pair._2()._1().isPresent())
+			{
+				Tuple2<Long, Integer> newVal = (Tuple2<Long, Integer>)pair._2()._1().get();
+				value = new Tuple2<Long, Integer>(newVal._1() + value._1(), newVal._2() + value._2());
+			}
+
+			if (pair._2()._2().isPresent())
+			{
+				Tuple2<Long, Integer> newVal = (Tuple2<Long, Integer>)pair._2()._2().get();
+				value = new Tuple2<Long, Integer>(newVal._1() + value._1(), newVal._2() + value._2());
+			}	
+			
+			return (B)value;
+		}
+		
+		throw new Exception("Correct sumPairValues function is not set!");
+		//return null;
+	}
 	
-	public static <A, B> Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>> getSortFunction(){
+	public static <A, B> Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>> getRDDJoinWithPreviousFunction(){
 		return new Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>>() {
 			private static final long serialVersionUID = 1L;
-
-			public JavaPairRDD<A, B> call(JavaPairRDD<A, B> pairs) throws Exception {
-				return pairs.flatMapToPair(MapReduceHelper.<A, B>getRDDFlipFunction()).
-				sortByKey(false).flatMapToPair(MapReduceHelper.<B, A>getRDDFlipFunction());
-			}
-		};
-	}
-
-	public static Function<JavaPairRDD<String, Integer>, JavaPairRDD<String, Integer>> getRDDJoinWithPreviousFunction(){
-		return new Function<JavaPairRDD<String, Integer>, JavaPairRDD<String, Integer>>() {
-			private static final long serialVersionUID = 1L;
-			JavaPairRDD<String, Integer> prevRdd = null;
+			JavaPairRDD<A, B> prevRdd = null;
 			
-			public JavaPairRDD<String, Integer> call(JavaPairRDD<String, Integer> rdd) throws Exception {
-				JavaPairRDD<String, Integer> newRdd = rdd;		
+			public JavaPairRDD<A, B> call(JavaPairRDD<A, B> rdd) throws Exception {
+				JavaPairRDD<A, B> newRdd = rdd;		
 
 				if (prevRdd != null) {
-					newRdd = rdd.fullOuterJoin(prevRdd).flatMapToPair(new PairFlatMapFunction<Tuple2<String, Tuple2<Optional<Integer>, Optional<Integer>>>, String, Integer>() {
-						private static final long serialVersionUID = 1L;
-
-						public Iterable<Tuple2<String, Integer>> call(Tuple2<String, Tuple2<Optional<Integer>, Optional<Integer>>> pair) throws Exception {
-									Integer value = 0;
-
-									if (pair._2()._1().isPresent())
-										value += pair._2()._1().get();
-
-									if (pair._2()._2().isPresent())
-										value += pair._2()._2().get();
-
-									ArrayList<Tuple2<String, Integer>> list = new ArrayList<Tuple2<String, Integer>>();
-									list.add(new Tuple2<String, Integer>(pair._1(), value));
-									return list;
-						}
-					});
+					newRdd = prevRdd;
+					
+					if (!rdd.take(1).isEmpty())
+					{
+						newRdd = rdd.fullOuterJoin(prevRdd).flatMapToPair(new PairFlatMapFunction<Tuple2<A, Tuple2<Optional<B>, Optional<B>>>, A, B>() {
+							private static final long serialVersionUID = 1L;
+	
+							public Iterable<Tuple2<A, B>> call(Tuple2<A, Tuple2<Optional<B>, Optional<B>>> pair) throws Exception {
+								B value = sumPairValues(pair);
+								ArrayList<Tuple2<A, B>> list = new ArrayList<Tuple2<A, B>>();
+								list.add(new Tuple2<A, B>(pair._1(), value));
+								return list;
+							}
+						});
+					}
 					
 					if (rdd.take(1).isEmpty() && !newRdd.take(1).isEmpty()){
-						rdd.context().getConf().set(FLUSH_RDD_FLAG, "true");
+						flushRDD = true;
 					}
 				}
 

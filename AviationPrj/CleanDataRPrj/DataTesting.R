@@ -9,8 +9,8 @@ g1t1Param = "ATL"
 print(sum(tb1$V1 == g1t1Param) + sum(tb1$V2 == g1t1Param) + sum(tb2$V1 == g1t1Param) + sum(tb2$V2 == g1t1Param))
 
 
-print("G1T3 day 6 on time arrival perf:")
-day <- 6
+print("G1T3 day 3 on time arrival perf:")
+day <- 3
 items <- tb1[tb1$V9 == day]
 items <- items[!is.na(items$V5)]
 

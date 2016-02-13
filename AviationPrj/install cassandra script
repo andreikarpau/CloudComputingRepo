@@ -25,13 +25,13 @@ cqlsh
 nodetool status
 ----------------
 
-cqlsh 172.31.15.51 9042
+cqlsh 172.31.5.89 9042
 
 sudo nano /etc/cassandra/cassandra.yaml
 
 
 start_native_transport: true
-rpc_address: 172.31.60.4
+rpc_address: 172.31.5.89
 endpoint_snitch: Ec2Snitch
 rpc_port: 9160
 
@@ -43,8 +43,8 @@ sudo ufw allow 9042
 ----------------
 
 // Quires
-CREATE KEYSPACE keyspaceCapstone WITH replication = {  'class': 'SimpleStrategy', 'replication_factor' : '3' };
-DROP TABLE keyspacecapstone.users;
+CREATE KEYSPACE keyspaceCapstone WITH replication = {  'class': 'SimpleStrategy', 'replication_factor' : '1' };
+
 DESCRIBE keyspaces;
 
 
@@ -55,9 +55,30 @@ select * from system.schema_columnfamilies where keyspace_name = 'keyspacecapsto
 
 use keyspaceCapstone;
 
-CREATE TABLE keyspaceCapstone.topfromx (fromAir varchar, airline varchar, perf varchar PRIMARY KEY);
+DROP TABLE keyspaceCapstone.topAirports;
+DROP TABLE keyspaceCapstone.perfDays;
+DROP TABLE keyspaceCapstone.topfromx;
+DROP TABLE keyspaceCapstone.topxy;
 
-CREATE TABLE keyspaceCapstone.topxy (fromAir varchar PRIMARY KEY, toAir varchar, airline varchar, perf varchar);
+DROP TABLE keyspaceCapstone.mean;
+DROP TABLE keyspaceCapstone.findflight;
+
+//=================================================
+
+select * FROM keyspaceCapstone.topAirports;
+select * FROM keyspaceCapstone.perfDays;
+select * FROM keyspaceCapstone.topfromx;
+select * FROM keyspaceCapstone.topxy;
+
+
+create table keyspaceCapstone.topAirports (Airport text, Popularity text, Id int, Group int, PRIMARY KEY (Group, Id)) WITH CLUSTERING ORDER BY (Id ASC);
+
+create table keyspaceCapstone.perfDays (Day text, Perf text, Id int, Group int, PRIMARY KEY (Group, Id)) WITH CLUSTERING ORDER BY (Id ASC);
+
+create table keyspaceCapstone.topfromx (Origin text, FromAirline text, Perf text, Id int, PRIMARY KEY (Origin, Id)) WITH CLUSTERING ORDER BY (Id ASC);
+
+create table keyspaceCapstone.topxy (Origin text, Dest text, Airline text, Perf text, Id int, PRIMARY KEY (Origin, Id)) WITH CLUSTERING ORDER BY (Id ASC);
+
 
 CREATE TABLE keyspaceCapstone.mean (fromAir varchar PRIMARY KEY, toAir varchar, mean varchar);
 
@@ -70,15 +91,12 @@ COPY mean FROM '~/Capstone/Output/MeanXYDelay/part-r-00000';
 COPY findflight FROM '~/Capstone/Output/FindFlight/part-r-00000';
 
 
-select * FROM topfromx;
-select * FROM topxy;
-select * FROM mean;
-select * FROM findflight;
 
-DROP TABLE topfromx;
-DROP TABLE topxy;
-DROP TABLE mean;
-DROP TABLE findflight;
+
+select * FROM keyspaceCapstone.topfromx;
+select * FROM keyspaceCapstone.topxy;
+select * FROM keyspaceCapstone.mean;
+select * FROM keyspaceCapstone.findflight;
 
 //-------------------------------------------------------------
 INSERT INTO keyspacecapstone.users ('user1');
@@ -90,6 +108,8 @@ select * from keyspacecapstone.users
 
 java -jar connectCassandra-0.0.1-SNAPSHOT-jar-with-dependencies.jar
 
+//////////////////////
+INSERT INTO keyspacecapstone.topAirports (airport, popularity, Id) VALUES ('asdasd', 'asfff', 1);
 
 
 
