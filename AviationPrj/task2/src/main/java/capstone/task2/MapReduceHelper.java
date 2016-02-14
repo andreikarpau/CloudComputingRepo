@@ -26,16 +26,16 @@ import com.google.common.base.Optional;
 public class MapReduceHelper {
 	public static enum SummingToUse 
 	{ 
-		G1T1, 
-		G1T3
+		IntegerSumming, 
+		LongIntTuplesSumming,
+		CompareFlightsAggregating
 	}
 	
 	public static final String INPUT_PARAMS = "inputParams";
 	public static final String TOPIC = "flightsTopic1";
 	public static final String FLUSH_RDD_FLAG = "flush.rdd.needed";
 	public static Boolean flushRDD = false;
-	
-	public static SummingToUse summingToUse;
+	public static final String SEPARATOR = "_";
 	
 	private MapReduceHelper() {}
 	
@@ -93,9 +93,8 @@ public class MapReduceHelper {
 		};
 	}
 
-	public static <A, B> B sumPairValues(Tuple2<A, Tuple2<Optional<B>, Optional<B>>> pair) throws Exception {
-		if (summingToUse == SummingToUse.G1T1)
-		{
+	public static <A, B> B sumPairValues(Tuple2<A, Tuple2<Optional<B>, Optional<B>>> pair, SummingToUse summingToUse) throws Exception {
+		if (summingToUse == SummingToUse.IntegerSumming) {
 			Integer value = 0;
 			if (pair._2()._1().isPresent())
 				value += (Integer)pair._2()._1().get();
@@ -106,8 +105,7 @@ public class MapReduceHelper {
 			return (B)value;
 		}
 			
-		if (summingToUse == SummingToUse.G1T3)
-		{
+		if (summingToUse == SummingToUse.LongIntTuplesSumming) {
 			Tuple2<Long, Integer> value = new Tuple2<Long, Integer>(0L, 0);
 			if (pair._2()._1().isPresent())
 			{
@@ -124,11 +122,50 @@ public class MapReduceHelper {
 			return (B)value;
 		}
 		
+		if (summingToUse == SummingToUse.CompareFlightsAggregating){
+			String v1 = null;
+			String v2 = null;
+			
+			if (pair._2()._1().isPresent())
+			{
+				v1 = (String)pair._2()._1().get();
+			}
+			
+			if (pair._2()._2().isPresent())
+			{
+				v2 = (String)pair._2()._2().get();
+			}		
+			
+			return (B)CompareFlights(v1, v2);
+		}
+		
 		throw new Exception("Correct sumPairValues function is not set!");
 		//return null;
 	}
 	
-	public static <A, B> Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>> getRDDJoinWithPreviousFunction(){
+	public static String CompareFlights(String v1, String v2) throws Exception {
+		if (v1 == null)
+			return v2;
+		
+		if (v2 == null)
+			return v1;
+			
+		String[] values1 = v1.split(SEPARATOR);				
+		String[] values2 = v2.split(SEPARATOR);				
+		Integer arrTime1 = Integer.parseInt(values1[3].toString());
+		Integer arrTime2 = Integer.parseInt(values2[3].toString());
+		
+		if (arrTime1 < arrTime2)
+		{
+			return v1;
+		}
+		else
+		{
+			return v2;
+		}
+	}
+	
+	public static <A, B> Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>> getRDDJoinWithPreviousFunction(final SummingToUse summingToUse){
 		return new Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>>() {
 			private static final long serialVersionUID = 1L;
 			JavaPairRDD<A, B> prevRdd = null;
@@ -145,7 +182,7 @@ public class MapReduceHelper {
 							private static final long serialVersionUID = 1L;
 	
 							public Iterable<Tuple2<A, B>> call(Tuple2<A, Tuple2<Optional<B>, Optional<B>>> pair) throws Exception {
-								B value = sumPairValues(pair);
+								B value = sumPairValues(pair, summingToUse);
 								ArrayList<Tuple2<A, B>> list = new ArrayList<Tuple2<A, B>>();
 								list.add(new Tuple2<A, B>(pair._1(), value));
 								return list;
@@ -189,6 +226,18 @@ public class MapReduceHelper {
 	        everything.append("\n");
 	    }
 	    return everything.toString();
+	}
+	
+	public static Function<Tuple2<String,Tuple2<Long,Integer>>, Boolean> GetFilterEmpty(){
+		return new Function<Tuple2<String,Tuple2<Long,Integer>>, Boolean>(){
+			private static final long serialVersionUID = 1L;
+			public Boolean call(Tuple2<String, Tuple2<Long, Integer>> pair) throws Exception {
+				if (pair == null || pair._1() == null || pair._1().isEmpty() || pair._2() == null)
+					return false;
+			
+				return true;
+			}
+		};
 	}
 	
 	public static FlightInformation[] readValuesFromFile(BufferedReader buffIn, ColumnNames[] names) throws IOException{

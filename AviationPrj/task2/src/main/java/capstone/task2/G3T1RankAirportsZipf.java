@@ -6,32 +6,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import kafka.serializer.StringDecoder;
+
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaPairReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
-import org.apache.spark.storage.StorageLevel;
 
-import capstone.task2.FlightInformation;
+import scala.Tuple2;
 import capstone.task2.FlightInformation.ColumnNames;
 import capstone.task2.MapReduceHelper.SummingToUse;
-import kafka.serializer.StringDecoder;
-import scala.Tuple2;
 
-public class G1T1RankAirports {
+public class G3T1RankAirportsZipf {
 	public static void main(String[] args) throws IOException {
 		if (args.length < 4) {
 			System.exit(1);
 		}
 		
-		String className = G1T1RankAirports.class.getSimpleName();
+		String className = G3T1RankAirportsZipf.class.getSimpleName();
 		Map<String, String> paramsMap = new HashMap<String, String>();
 		SparkConf sparkConf = new SparkConf().setAppName(className);
 		Map<String, Integer> topicMap = new HashMap<String, Integer>();
@@ -77,7 +77,7 @@ public class G1T1RankAirports {
 		});
 	
 		JavaPairDStream<String, Integer> fullRDD = sums.transformToPair(MapReduceHelper.<String, Integer>getRDDJoinWithPreviousFunction(SummingToUse.IntegerSumming));	
-		JavaPairDStream<String, Integer> sorted = fullRDD.transformToPair(G1T1RankAirports.getSortFunction());
+		JavaPairDStream<String, Integer> sorted = fullRDD.transformToPair(G3T1RankAirportsZipf.getSortFunction());
 		
 		sorted.print();
 		jssc.start();
@@ -103,8 +103,8 @@ public class G1T1RankAirports {
 					Integer cassandraPort = Integer.parseInt(rdd.context().getConf().get("spark.cassandra.connection.port"));
 					cassandraHelper.createConnection(cassandraIp, cassandraPort);
 					
-					List<Tuple2<Integer, String>> list = rdd.take(10);
-                	cassandraHelper.prepareQueries("INSERT INTO keyspacecapstone.topAirports (airport, popularity, Id, Group) VALUES (?,?,?,?);");
+					List<Tuple2<Integer, String>> list = rdd.toArray();
+                	cassandraHelper.prepareQueries("INSERT INTO keyspacecapstone.zipf (airport, popularity, Id, Group) VALUES (?,?,?,?);");
                 	
                 	Object[] values = new Object[4];
                 	Integer i = 0;
@@ -119,7 +119,7 @@ public class G1T1RankAirports {
                     	System.out.println("\n--------CASSANDRA " + tuple2._2() + " " + tuple2._1() + " " + i);
                     	
                     	cassandraHelper.addKey(values);
-                    	Thread.sleep(100);
+                    	//Thread.sleep(10);
 					}
                     
     				cassandraHelper.closeConnection();

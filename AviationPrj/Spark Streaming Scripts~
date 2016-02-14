@@ -7,6 +7,8 @@ spark-shell
 // Mount data ////////////////////////
 sudo mount /dev/xvdg ~/ClearedData
 
+
+scp -i AskofenKey.pem /home/askofen/Documents/EclipseWorkspace/task2/target/task2-0.0.1-jar-with-dependencies.jar ec2-user@ec2-54-173-14-126.compute-1.amazonaws.com:~/
 ///////////////////////////////////////
 
 scp /home/askofen/Documents/EclipseWorkspace/task2/src/main/java/capstone/task2/* namenode:~/
@@ -38,14 +40,17 @@ sudo su spark
 
 spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3
 
-
 spark-submit --master yarn-client --class capstone.task2.G1T3RankWeekDays ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3
-
 
 spark-submit --master yarn-client --class capstone.task2.G2T1RankAirlinesFromX ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3 ~/../TestData/airportsInput.txt
 
+spark-submit --master yarn-client --class capstone.task2.G2T3XYRankAirlinesArrPerf ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3 ~/../TestData/airportsXYInput.txt
 
-spark-submit --master yarn-client --class capstone.task2.G2T1RankAirlinesFromX ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3 ~/../TestData/airportsXYInput.txt
+spark-submit --master yarn-client --class capstone.task2.G2T4XYMeanArrivalDelay ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3 ~/../TestData/airportsXYInput.txt
+
+spark-submit --master yarn-client --class capstone.task2.G3T1RankAirportsZipf ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3
+
+spark-submit --master yarn-client --class capstone.task2.G3T2XYZBestTravel ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3 ~/../TestData/airportsXYZInput.txt
 
 ///////////////////////////////////////
 Kafka
@@ -72,6 +77,14 @@ kafka-console-producer.sh --broker-list 172.31.50.99:6667 --topic flightsTopic
 kafka-console-consumer.sh --zookeeper 172.31.50.99:2181 --topic flightsTopic --from-beginning
 
 
+/////////////////////////////////////////////////////////////
+java -cp ~/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.10.166:6667 sandbox.hortonworks.com:2181 /home/ec2-user/ClearedCSV/input3.txt flightsTopic
+
+
+////////////////////////////////////////////////////////////
+export JAVA_HOME=/usr/jdk64/jdk1.8.0_40
+PATH=$PATH:$JAVA_HOME/bin
+export PATH
 
 
 

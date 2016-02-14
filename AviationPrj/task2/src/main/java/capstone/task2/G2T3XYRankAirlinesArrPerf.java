@@ -31,7 +31,6 @@ public class G2T3XYRankAirlinesArrPerf {
 		if (args.length < 4) {
 			System.exit(1);
 		}
-		MapReduceHelper.summingToUse = SummingToUse.G1T3;
 
 		String className = G2T3XYRankAirlinesArrPerf.class.getSimpleName();
 		Map<String, String> paramsMap = new HashMap<String, String>();
@@ -86,7 +85,7 @@ public class G2T3XYRankAirlinesArrPerf {
 						}
 		});
 	
-		JavaPairDStream<String, Tuple2<Long, Integer>> fullRDD = sums.transformToPair(MapReduceHelper.<String, Tuple2<Long, Integer>>getRDDJoinWithPreviousFunction());	
+		JavaPairDStream<String, Tuple2<Long, Integer>> fullRDD = sums.transformToPair(MapReduceHelper.<String, Tuple2<Long, Integer>>getRDDJoinWithPreviousFunction(SummingToUse.LongIntTuplesSumming));	
 		JavaPairDStream<String, Double> sorted = fullRDD.transformToPair(G2T3XYRankAirlinesArrPerf.getSortFunction());
 		
 		sorted.print();
@@ -94,26 +93,14 @@ public class G2T3XYRankAirlinesArrPerf {
 		jssc.awaitTermination();
 		jssc.stop();
 	}
-	
-	public static Function<Tuple2<String,Tuple2<Long,Integer>>, Boolean> GetFilterEmpty(){
-		return new Function<Tuple2<String,Tuple2<Long,Integer>>, Boolean>(){
-			private static final long serialVersionUID = 1L;
-			public Boolean call(Tuple2<String, Tuple2<Long, Integer>> pair) throws Exception {
-				if (pair == null || pair._1() == null || pair._1().isEmpty() || pair._2() == null)
-					return false;
-			
-				return true;
-			}
-		};
-	}
-	
+
 	public static Function<JavaPairRDD<String,Tuple2<Long,Integer>>, JavaPairRDD<String, Double>> getSortFunction(){
 		return new Function<JavaPairRDD<String, Tuple2<Long, Integer>>, JavaPairRDD<String, Double>>() {
 			private static final long serialVersionUID = 1L;
 			private Boolean isWritten = false;
 						
 			public JavaPairRDD<String, Double> call(JavaPairRDD<String, Tuple2<Long, Integer>> pairs) throws Exception {
-				JavaPairRDD<String, Double> perfs = pairs.filter(GetFilterEmpty()).mapToPair(new PairFunction<Tuple2<String,Tuple2<Long,Integer>>, String, Double>() {
+				JavaPairRDD<String, Double> perfs = pairs.filter(MapReduceHelper.GetFilterEmpty()).mapToPair(new PairFunction<Tuple2<String,Tuple2<Long,Integer>>, String, Double>() {
 					private static final long serialVersionUID = 1L;
 					public Tuple2<String, Double> call(Tuple2<String, Tuple2<Long, Integer>> pair) throws Exception {
 						double sum = pair._2()._1();

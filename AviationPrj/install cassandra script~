@@ -50,24 +50,16 @@ DESCRIBE keyspaces;
 
 select * from system.schema_columnfamilies where keyspace_name = 'keyspacecapstone';
 
-
-// 
-
+//-------------------------------------------------
 use keyspaceCapstone;
-
-DROP TABLE keyspaceCapstone.topAirports;
-DROP TABLE keyspaceCapstone.perfDays;
-DROP TABLE keyspaceCapstone.topfromx;
-
-DROP TABLE keyspaceCapstone.topxy;
-DROP TABLE keyspaceCapstone.mean;
-DROP TABLE keyspaceCapstone.findflight;
-
-//=================================================
 
 select * FROM keyspaceCapstone.topAirports;
 select * FROM keyspaceCapstone.perfDays;
 select * FROM keyspaceCapstone.topfromx;
+select * FROM keyspaceCapstone.topxy;
+select * FROM keyspaceCapstone.mean;
+select * FROM keyspaceCapstone.zipf;
+select * FROM keyspaceCapstone.findflight;
 
 create table keyspaceCapstone.topAirports (Airport text, Popularity text, Id int, Group int, PRIMARY KEY (Group, Id)) WITH CLUSTERING ORDER BY (Id ASC);
 
@@ -77,31 +69,34 @@ create table keyspaceCapstone.topfromx (Origin text, FromAirline text, Perf text
 
 create table keyspaceCapstone.topxy (Origin text, Dest text, Airline text, Perf text, Id int, PRIMARY KEY (Origin, Id)) WITH CLUSTERING ORDER BY (Id ASC);
 
+create table keyspaceCapstone.mean (Origin text, Dest text, Mean text, Id int, PRIMARY KEY (Origin, Id)) WITH CLUSTERING ORDER BY (Id ASC);
 
-CREATE TABLE keyspaceCapstone.mean (fromAir varchar PRIMARY KEY, toAir varchar, mean varchar);
+create table keyspaceCapstone.zipf (Airport text, Popularity text, Id int, Group int, PRIMARY KEY (Group, Id)) WITH CLUSTERING ORDER BY (Id ASC);
 
-CREATE TABLE keyspaceCapstone.findflight (date1 varchar, fromAir1 varchar PRIMARY KEY, toAir1 varchar, time1 varchar, flightId1 varchar, date2 varchar, fromAir2 varchar, toAir2 varchar, time2 varchar, flightId2 varchar);
+create table keyspaceCapstone.findflight (Date1 text, Origin1 text, Dest1 text, Time1 text, FlightId1 text, Date2 text, Origin2 text, Dest2 text, Time2 text, FlightId2 text, PRIMARY KEY (Date1, Origin1, Dest1, Dest2));
 
 
+
+
+//-------------------------------------------------------------
 COPY topfromx FROM '~/Capstone/Output/TopAirlinesFromX/part-r-00000';
 COPY topxy FROM '~/Capstone/Output/TopAirlinesXY/part-r-00000';
 COPY mean FROM '~/Capstone/Output/MeanXYDelay/part-r-00000';
 COPY findflight FROM '~/Capstone/Output/FindFlight/part-r-00000';
 
 
-
-
-select * FROM keyspaceCapstone.topfromx;
-select * FROM keyspaceCapstone.topxy;
-select * FROM keyspaceCapstone.mean;
-select * FROM keyspaceCapstone.findflight;
-
 //-------------------------------------------------------------
 INSERT INTO keyspacecapstone.users ('user1');
 INSERT INTO keyspacecapstone.users (user_name) VALUES ('user1');
 select * from keyspacecapstone.users
 
-
+DROP TABLE keyspaceCapstone.topAirports;
+DROP TABLE keyspaceCapstone.perfDays;
+DROP TABLE keyspaceCapstone.topfromx;
+DROP TABLE keyspaceCapstone.topxy;
+DROP TABLE keyspaceCapstone.mean;
+DROP TABLE keyspaceCapstone.zipf;
+DROP TABLE keyspaceCapstone.findflight;
 //--------------------------------------------------------------
 
 java -jar connectCassandra-0.0.1-SNAPSHOT-jar-with-dependencies.jar

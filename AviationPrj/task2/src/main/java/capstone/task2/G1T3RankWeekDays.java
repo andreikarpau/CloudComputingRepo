@@ -31,7 +31,6 @@ public class G1T3RankWeekDays {
 		if (args.length < 4) {
 			System.exit(1);
 		}
-		MapReduceHelper.summingToUse = SummingToUse.G1T3;
 
 		String className = G1T3RankWeekDays.class.getSimpleName();
 		Map<String, String> paramsMap = new HashMap<String, String>();
@@ -77,7 +76,7 @@ public class G1T3RankWeekDays {
 						}
 		});
 	
-		JavaPairDStream<String, Tuple2<Long, Integer>> fullRDD = sums.transformToPair(MapReduceHelper.<String, Tuple2<Long, Integer>>getRDDJoinWithPreviousFunction());	
+		JavaPairDStream<String, Tuple2<Long, Integer>> fullRDD = sums.transformToPair(MapReduceHelper.<String, Tuple2<Long, Integer>>getRDDJoinWithPreviousFunction(SummingToUse.LongIntTuplesSumming));	
 		JavaPairDStream<String, Double> sorted = fullRDD.transformToPair(G1T3RankWeekDays.getSortFunction());
 		
 		sorted.print();

@@ -50,11 +50,7 @@ sudo yum install apache-maven
 
 ///////////////////////////////////////////
 sudo mkdir ClearedData
-
 sudo mount /dev/xvdf ~/ClearedData
-sudo umount ~/ClearedData
-
-
 sudo cp -a ~/ClearedData/ClearedCSV ~/
 
 
