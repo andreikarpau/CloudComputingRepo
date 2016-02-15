@@ -74,7 +74,7 @@ kafka-topics.sh --list --zookeeper localhost:2181
 kafka-console-producer.sh --broker-list 172.31.50.99:6667 --topic flightsTopic
 
 ///////////////// Console Consumer
-kafka-console-consumer.sh --zookeeper 172.31.50.99:2181 --topic flightsTopic --from-beginning
+kafka-console-consumer.sh --zookeeper 172.31.10.166:2181 --topic flightsTopic --from-beginning
 
 
 /////////////////////////////////////////////////////////////

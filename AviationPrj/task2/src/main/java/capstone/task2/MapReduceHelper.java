@@ -16,6 +16,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import scala.Tuple2;
@@ -93,50 +94,30 @@ public class MapReduceHelper {
 		};
 	}
 
-	public static <A, B> B sumPairValues(Tuple2<A, Tuple2<Optional<B>, Optional<B>>> pair, SummingToUse summingToUse) throws Exception {
+	public static <B> B sumPairValues(B v1, B v2, SummingToUse summingToUse) throws Exception {
 		if (summingToUse == SummingToUse.IntegerSumming) {
 			Integer value = 0;
-			if (pair._2()._1().isPresent())
-				value += (Integer)pair._2()._1().get();
-
-			if (pair._2()._2().isPresent())
-				value += (Integer)pair._2()._2().get();
+				value += (Integer)v1;
+				value += (Integer)v2;
 			
 			return (B)value;
 		}
 			
 		if (summingToUse == SummingToUse.LongIntTuplesSumming) {
 			Tuple2<Long, Integer> value = new Tuple2<Long, Integer>(0L, 0);
-			if (pair._2()._1().isPresent())
-			{
-				Tuple2<Long, Integer> newVal = (Tuple2<Long, Integer>)pair._2()._1().get();
-				value = new Tuple2<Long, Integer>(newVal._1() + value._1(), newVal._2() + value._2());
-			}
 
-			if (pair._2()._2().isPresent())
-			{
-				Tuple2<Long, Integer> newVal = (Tuple2<Long, Integer>)pair._2()._2().get();
-				value = new Tuple2<Long, Integer>(newVal._1() + value._1(), newVal._2() + value._2());
-			}	
-			
+			Tuple2<Long, Integer> newVal1 = (Tuple2<Long, Integer>)v1;
+			value = new Tuple2<Long, Integer>(newVal1._1() + value._1(), newVal1._2() + value._2());
+
+			Tuple2<Long, Integer> newVal2 = (Tuple2<Long, Integer>)v2;
+			value = new Tuple2<Long, Integer>(newVal2._1() + value._1(), newVal2._2() + value._2());
+
 			return (B)value;
 		}
 		
 		if (summingToUse == SummingToUse.CompareFlightsAggregating){
-			String v1 = null;
-			String v2 = null;
-			
-			if (pair._2()._1().isPresent())
-			{
-				v1 = (String)pair._2()._1().get();
-			}
-			
-			if (pair._2()._2().isPresent())
-			{
-				v2 = (String)pair._2()._2().get();
-			}		
-			
-			return (B)CompareFlights(v1, v2);
+
+			return (B)CompareFlights((String)v1, (String)v2);
 		}
 		
 		throw new Exception("Correct sumPairValues function is not set!");
@@ -169,6 +150,7 @@ public class MapReduceHelper {
 		return new Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>>() {
 			private static final long serialVersionUID = 1L;
 			JavaPairRDD<A, B> prevRdd = null;
+			private int counter = 0;
 			
 			public JavaPairRDD<A, B> call(JavaPairRDD<A, B> rdd) throws Exception {
 				JavaPairRDD<A, B> newRdd = rdd;		
@@ -178,20 +160,21 @@ public class MapReduceHelper {
 					
 					if (!rdd.take(1).isEmpty())
 					{
-						newRdd = rdd.fullOuterJoin(prevRdd).flatMapToPair(new PairFlatMapFunction<Tuple2<A, Tuple2<Optional<B>, Optional<B>>>, A, B>() {
+						newRdd = rdd.union(prevRdd).reduceByKey(new Function2<B, B, B>() {
 							private static final long serialVersionUID = 1L;
-	
-							public Iterable<Tuple2<A, B>> call(Tuple2<A, Tuple2<Optional<B>, Optional<B>>> pair) throws Exception {
-								B value = sumPairValues(pair, summingToUse);
-								ArrayList<Tuple2<A, B>> list = new ArrayList<Tuple2<A, B>>();
-								list.add(new Tuple2<A, B>(pair._1(), value));
-								return list;
+							public B call(B v1, B v2) throws Exception {
+								B value = sumPairValues(v1, v2, summingToUse);
+								return value;
 							}
 						});
 					}
 					
 					if (rdd.take(1).isEmpty() && !newRdd.take(1).isEmpty()){
-						flushRDD = true;
+						counter++;
+						if (3 < counter)
+							flushRDD = true;
+					}else{
+						counter = 0;
 					}
 				}
 

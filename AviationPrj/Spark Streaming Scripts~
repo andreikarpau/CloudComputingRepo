@@ -78,7 +78,7 @@ kafka-console-consumer.sh --zookeeper 172.31.50.99:2181 --topic flightsTopic --f
 
 
 /////////////////////////////////////////////////////////////
-java -cp ~/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.10.166:6667 sandbox.hortonworks.com:2181 /home/ec2-user/ClearedCSV/input3.txt flightsTopic
+java -cp ~/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.10.166:6667 sandbox.hortonworks.com:2181 /home/ec2-user/ClearedCSV/input4.txt flightsTopic
 
 
 ////////////////////////////////////////////////////////////
