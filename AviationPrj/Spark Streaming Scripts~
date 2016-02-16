@@ -13,6 +13,10 @@ scp -i AskofenKey.pem /home/askofen/Documents/EclipseWorkspace/task2/target/task
 
 scp /home/askofen/Documents/EclipseWorkspace/task2/src/main/java/capstone/task2/* namenode:~/
 
+scp -i AskofenKey.pem /home/askofen/Documents/EclipseWorkspace/task2/src/main/java/capstone/task2/* ec2-user@ec2-52-90-96-192.compute-1.amazonaws.com:~/
+
+scp ~/Documents/EclipseWorkspace/hadoopMVN/target/hadoopMVN-0.0.1-SNAPSHOT-jar-with-dependencies.jar namenode:~/
+
 
 sudo rm -r ~/datasciencecoursera/AviationPrj/task2/src/main/java/capstone/task2/*
 sudo mv ~/*.java ~/datasciencecoursera/AviationPrj/task2/src/main/java/capstone/task2/
@@ -74,7 +78,7 @@ kafka-topics.sh --list --zookeeper localhost:2181
 kafka-console-producer.sh --broker-list 172.31.50.99:6667 --topic flightsTopic
 
 ///////////////// Console Consumer
-kafka-console-consumer.sh --zookeeper 172.31.50.99:2181 --topic flightsTopic --from-beginning
+kafka-console-consumer.sh --zookeeper 172.31.10.166:2181 --topic flightsTopic --from-beginning
 
 
 /////////////////////////////////////////////////////////////
@@ -86,6 +90,12 @@ export JAVA_HOME=/usr/jdk64/jdk1.8.0_40
 PATH=$PATH:$JAVA_HOME/bin
 export PATH
 
+////////////////////////////////////////////////////////////
+sudo su spark
+
+spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.10.166:2181 10b 172.31.10.166 9042 5 flightsTopic2
+
+spark-submit --master yarn --deploy-mode cluster --driver-memory 4g --executor-memory 2g --executor-cores 5 --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.10.166:2181 10b 172.31.10.166 9042 5 flightsTopic2
 
 
 

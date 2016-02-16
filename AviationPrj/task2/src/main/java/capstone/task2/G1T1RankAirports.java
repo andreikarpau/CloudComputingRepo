@@ -19,9 +19,10 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
 import org.apache.spark.storage.StorageLevel;
 
+import com.google.common.base.Optional;
+
 import capstone.task2.FlightInformation;
 import capstone.task2.FlightInformation.ColumnNames;
-import capstone.task2.MapReduceHelper.SummingToUse;
 import kafka.serializer.StringDecoder;
 import scala.Tuple2;
 
@@ -38,11 +39,12 @@ public class G1T1RankAirports {
 		
 		MapReduceHelper.fillBaseStreamingParams(args, paramsMap, sparkConf, topicMap, className);
 		
-		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(8000));
-		JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap, StorageLevel.MEMORY_AND_DISK_SER_2());
-
+		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(5000));
+		JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap, StorageLevel.MEMORY_AND_DISK_SER());
+		jssc.checkpoint("/tmp/G1T1");
+		
 		JavaDStream<String> lines = messages.map(MapReduceHelper.getBaseInputPreprocessingFunction());
-
+		
 		JavaPairDStream<String, Integer> sums = lines.flatMapToPair(
 				new PairFlatMapFunction<String, String, Integer>() {
 					private static final long serialVersionUID = 1L;
@@ -75,9 +77,32 @@ public class G1T1RankAirports {
 							return value1 + value2;
 						}
 		});
-	
-		JavaPairDStream<String, Integer> fullRDD = sums.transformToPair(MapReduceHelper.<String, Integer>getRDDJoinWithPreviousFunction(SummingToUse.IntegerSumming));	
-		JavaPairDStream<String, Integer> sorted = fullRDD.transformToPair(G1T1RankAirports.getSortFunction());
+		
+		sums = sums.updateStateByKey(new Function2<List<Integer>, Optional<Integer>, Optional<Integer>>() {
+			private static final long serialVersionUID = 1L;
+			public Optional<Integer> call(List<Integer> v1, Optional<Integer> v2) throws Exception {
+						Integer sum = 0;
+
+						for (Integer i : v1) {
+							sum += i;
+						}
+
+						if (v2.isPresent())
+							sum += v2.get();
+		
+						return Optional.of(sum);
+					}
+			});
+		/*		
+		//JavaPairDStream<String, Integer> fullRDD = sums.transformToPair(MapReduceHelper.<String, Integer>getRDDJoinWithPreviousFunction(SummingToUse.IntegerSumming));	
+		JavaPairDStream<String, Integer> sorted = sums.foreachRDD(new Function<JavaPairRDD<String,Integer>, Void>() {
+			public Void call(JavaPairRDD<String, Integer> v1) throws Exception {
+				// TODO Auto-generated method stub
+				return null;
+			}
+		});//..transformToPair(G1T1RankAirports.getSortFunction());
+*/
+		JavaPairDStream<String, Integer> sorted = sums.transformToPair(G1T1RankAirports.getSortFunction());
 		
 		sorted.print();
 		jssc.start();
@@ -89,8 +114,7 @@ public class G1T1RankAirports {
 		return new Function<JavaPairRDD<String, Integer>, JavaPairRDD<String, Integer>>() {
 			private static final long serialVersionUID = 1L;
 			private Boolean isWritten = false;
-			private CassandraHelper cassandraHelper = new CassandraHelper();
-			
+						
 			public JavaPairRDD<String, Integer> call(JavaPairRDD<String, Integer> pairs) throws Exception {
 				JavaPairRDD<Integer, String> rdd = pairs.flatMapToPair(MapReduceHelper.<String, Integer>getRDDFlipFunction()).sortByKey(false);
 				
@@ -101,6 +125,7 @@ public class G1T1RankAirports {
 
 					String cassandraIp = rdd.context().getConf().get("spark.connection.cassandra.host");
 					Integer cassandraPort = Integer.parseInt(rdd.context().getConf().get("spark.cassandra.connection.port"));
+					CassandraHelper cassandraHelper = new CassandraHelper();
 					cassandraHelper.createConnection(cassandraIp, cassandraPort);
 					
 					List<Tuple2<Integer, String>> list = rdd.take(10);

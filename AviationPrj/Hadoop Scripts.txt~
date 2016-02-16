@@ -99,8 +99,8 @@ hdfs dfs -copyToLocal /Capstone/Output/FindFlight/part-r-00000 ~/
 
 hdfs dfs -copyToLocal /Capstone/Output/TopAirlinesFromX/ ~/Results2
 hdfs dfs -copyToLocal /Capstone/Output/TopAirlinesXY/ ~/Results2
-hdfs dfs -copyToLocal /Capstone/Output/MeanXYDelay/ ~/Results2
-hdfs dfs -copyToLocal /Capstone/Output/FindFlight/ ~/Results2
+hdfs dfs -copyToLocal /Capstone/Output/MeanXYDelay/part-r-00000 ~/Results2
+hdfs dfs -copyToLocal /Capstone/Output/FindFlight/part-r-00000 ~/Results2
 
 
 nano part-r-00000

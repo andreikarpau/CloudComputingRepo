@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -21,8 +22,6 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import scala.Tuple2;
 import capstone.task2.FlightInformation.ColumnNames;
-
-import com.google.common.base.Optional;
 
 public class MapReduceHelper {
 	public static enum SummingToUse 
@@ -44,7 +43,9 @@ public class MapReduceHelper {
 		paramsMap.put("auto.offset.reset", "smallest");
 		paramsMap.put("zookeeper.connect", args[0]);
 		paramsMap.put("group.id", args[1]);
-		paramsMap.put("zookeeper.connection.timeout.ms", "10000");
+
+		paramsMap.put("rebalance.backoff.ms", "20000");
+		paramsMap.put("zookeeper.connection.timeout.ms", "40000");
 
 		sparkConf.set("spark.connection.cassandra.host", args[2]).set("spark.cassandra.connection.port", args[3]);
 		sparkConf.set(FLUSH_RDD_FLAG, "false");
@@ -149,14 +150,20 @@ public class MapReduceHelper {
 	public static <A, B> Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>> getRDDJoinWithPreviousFunction(final SummingToUse summingToUse){
 		return new Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>>() {
 			private static final long serialVersionUID = 1L;
-			JavaPairRDD<A, B> prevRdd = null;
+			List<Tuple2<A, B>> prevRdd = null;
 			private int counter = 0;
 			
 			public JavaPairRDD<A, B> call(JavaPairRDD<A, B> rdd) throws Exception {
 				JavaPairRDD<A, B> newRdd = rdd;		
 
-				if (prevRdd != null) {
-					newRdd = prevRdd;
+				if (prevRdd != null) {				
+					/*newRdd = rdd.flatMapToPair(new PairFlatMapFunction<Tuple2<A,B>, A, B>() {
+
+						public Iterable<Tuple2<A, B>> call(Tuple2<A, B> t) throws Exception {
+							return prevRdd;
+						}
+						
+					});
 					
 					if (!rdd.take(1).isEmpty())
 					{
@@ -167,7 +174,7 @@ public class MapReduceHelper {
 								return value;
 							}
 						});
-					}
+					}*/
 					
 					if (rdd.take(1).isEmpty() && !newRdd.take(1).isEmpty()){
 						counter++;
@@ -178,7 +185,7 @@ public class MapReduceHelper {
 					}
 				}
 
-				prevRdd = newRdd;
+				prevRdd = newRdd.toArray();
 				return newRdd;
 			}
 		};
