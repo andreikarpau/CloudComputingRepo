@@ -42,10 +42,6 @@ public class CassandraHelper {
             System.out.printf("Datatacenter: %s; Host: %s; Rack: %s\n", host.getDatacenter(), host.getAddress(), host.getRack());
         }
         this.session = cluster.connect();
-
-        
-        //this.prepareQueries();
-
     }
 
     public void closeConnection() {

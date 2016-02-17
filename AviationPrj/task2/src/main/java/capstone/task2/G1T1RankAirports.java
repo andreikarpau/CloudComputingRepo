@@ -14,11 +14,9 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
-import org.apache.spark.streaming.api.java.JavaPairReceiverInputDStream;
+import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
-import org.apache.spark.storage.StorageLevel;
-
 import com.google.common.base.Optional;
 
 import capstone.task2.FlightInformation;
@@ -40,7 +38,9 @@ public class G1T1RankAirports {
 		MapReduceHelper.fillBaseStreamingParams(args, paramsMap, sparkConf, topicMap, className);
 		
 		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(5000));
-		JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap, StorageLevel.MEMORY_AND_DISK_SER());
+		
+		JavaPairInputDStream<String, String> messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap.keySet());	
+//		JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap, StorageLevel.MEMORY_AND_DISK_SER());
 		jssc.checkpoint("/tmp/G1T1");
 		
 		JavaDStream<String> lines = messages.map(MapReduceHelper.getBaseInputPreprocessingFunction());
@@ -93,20 +93,13 @@ public class G1T1RankAirports {
 						return Optional.of(sum);
 					}
 			});
-		/*		
-		//JavaPairDStream<String, Integer> fullRDD = sums.transformToPair(MapReduceHelper.<String, Integer>getRDDJoinWithPreviousFunction(SummingToUse.IntegerSumming));	
-		JavaPairDStream<String, Integer> sorted = sums.foreachRDD(new Function<JavaPairRDD<String,Integer>, Void>() {
-			public Void call(JavaPairRDD<String, Integer> v1) throws Exception {
-				// TODO Auto-generated method stub
-				return null;
-			}
-		});//..transformToPair(G1T1RankAirports.getSortFunction());
-*/
+		
 		JavaPairDStream<String, Integer> sorted = sums.transformToPair(G1T1RankAirports.getSortFunction());
 		
 		sorted.print();
 		jssc.start();
-		jssc.awaitTermination();
+
+		MapReduceHelper.awaitTermination(jssc);
 		jssc.stop();
 	}
 	
@@ -116,10 +109,11 @@ public class G1T1RankAirports {
 			private Boolean isWritten = false;
 						
 			public JavaPairRDD<String, Integer> call(JavaPairRDD<String, Integer> pairs) throws Exception {
-				JavaPairRDD<Integer, String> rdd = pairs.flatMapToPair(MapReduceHelper.<String, Integer>getRDDFlipFunction()).sortByKey(false);
 				
 				if (!isWritten && MapReduceHelper.flushRDD)
 				{
+					JavaPairRDD<Integer, String> rdd = pairs.flatMapToPair(MapReduceHelper.<String, Integer>getRDDFlipFunction()).sortByKey(false);
+					
 					isWritten = true;
 					System.out.println("\n-------WRITE TO CASSANDRA 1------ ");
 
@@ -148,9 +142,10 @@ public class G1T1RankAirports {
 					}
                     
     				cassandraHelper.closeConnection();
+    				return rdd.flatMapToPair(MapReduceHelper.<Integer, String>getRDDFlipFunction());
                 }		
 				
-				return rdd.flatMapToPair(MapReduceHelper.<Integer, String>getRDDFlipFunction());
+				return pairs;
 			}
 		};
 	}

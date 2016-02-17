@@ -20,17 +20,17 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
-import org.apache.spark.streaming.api.java.JavaPairReceiverInputDStream;
+import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
 
 import scala.Tuple2;
 import capstone.task2.FlightInformation.ColumnNames;
-import capstone.task2.MapReduceHelper.SummingToUse;
+
+import com.google.common.base.Optional;
 
 public class G3T2XYZBestTravel {
 	public static void main(String[] args) throws IOException {
@@ -46,20 +46,36 @@ public class G3T2XYZBestTravel {
 		MapReduceHelper.fillBaseStreamingParams(args, paramsMap, sparkConf, topicMap, className);
 		final String filterStr = sparkConf.get(MapReduceHelper.INPUT_PARAMS);
 		
-		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(8000));
-		JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap, StorageLevel.MEMORY_AND_DISK_SER_2());
-
+		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(5000));
+		JavaPairInputDStream<String, String> messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap.keySet());	
+		jssc.checkpoint("/tmp/G3T2");
+				
 		JavaDStream<String> lines = messages.map(MapReduceHelper.getBaseInputPreprocessingFunction());
 		JavaPairDStream<String, String> flights = lines.flatMapToPair(GetMapWithInputFunction(filterStr)).
 				reduceByKey(GetFilterBestFlights());
 	
 		
-		JavaPairDStream<String, String> fullRDD = flights.transformToPair(MapReduceHelper.<String, String>getRDDJoinWithPreviousFunction(SummingToUse.CompareFlightsAggregating));			
-		JavaPairDStream<String, String> sorted = fullRDD.transformToPair(G3T2XYZBestTravel.getSortFunction());
+		flights = flights.updateStateByKey(new Function2<List<String>, Optional<String>, Optional<String>>() {
+			private static final long serialVersionUID = 1L;
+			public Optional<String> call(List<String> v1, Optional<String> v2) throws Exception {
+				String output = null;
+
+						for (String i : v1) {							
+							output = MapReduceHelper.CompareFlights(output, i);
+						}
+
+						if (v2.isPresent())
+							output = MapReduceHelper.CompareFlights(output, v2.get());
+		
+						return Optional.of(output);
+					}
+			});
+		
+		JavaPairDStream<String, String> sorted = flights.transformToPair(G3T2XYZBestTravel.getSortFunction());
 		
 		sorted.print();
 		jssc.start();
-		jssc.awaitTermination();
+		MapReduceHelper.awaitTermination(jssc);
 		jssc.stop();
 	}
 
@@ -180,32 +196,33 @@ public class G3T2XYZBestTravel {
 			private Boolean isWritten = false;
 						
 			public JavaPairRDD<String, String> call(JavaPairRDD<String, String> pairs) throws Exception {
-				JavaPairRDD<String, String> rdd = pairs.mapToPair(new PairFunction<Tuple2<String,String>, String, String>() {
-					private static final long serialVersionUID = 1L;
-					public Tuple2<String, String> call(Tuple2<String, String> pair) throws Exception {
-						String flightNum = pair._1().split(MapReduceHelper.SEPARATOR)[0];
-						return new Tuple2<String, String>(flightNum, pair._2());
-					}			 
-				 }).reduceByKey(new Function2<String, String, String>() {
-						private static final long serialVersionUID = 1L;
-						public String call(String val1, String val2) throws Exception {
-							if (val1 == null || val1.isEmpty() || val2 == null || val1.isEmpty())
-								return "";
-							
-							Integer val1FlightNum = Integer.parseInt(val1.split(MapReduceHelper.SEPARATOR)[5]);
-							Integer val2FlightNum = Integer.parseInt(val2.split(MapReduceHelper.SEPARATOR)[5]);
-							
-							if (val1FlightNum < val2FlightNum)
-							{
-								return val1 + MapReduceHelper.SEPARATOR + val2;
-							}
-
-							return val2 + MapReduceHelper.SEPARATOR + val1;
-						}
-					});
-				
 				if (!isWritten && MapReduceHelper.flushRDD)
-				{
+				{				
+					JavaPairRDD<String, String> rdd = pairs.mapToPair(new PairFunction<Tuple2<String,String>, String, String>() {
+						private static final long serialVersionUID = 1L;
+						public Tuple2<String, String> call(Tuple2<String, String> pair) throws Exception {
+							String flightNum = pair._1().split(MapReduceHelper.SEPARATOR)[0];
+							return new Tuple2<String, String>(flightNum, pair._2());
+						}			 
+					 }).reduceByKey(new Function2<String, String, String>() {
+							private static final long serialVersionUID = 1L;
+							public String call(String val1, String val2) throws Exception {
+								if (val1 == null || val1.isEmpty() || val2 == null || val1.isEmpty())
+									return "";
+								
+								Integer val1FlightNum = Integer.parseInt(val1.split(MapReduceHelper.SEPARATOR)[5]);
+								Integer val2FlightNum = Integer.parseInt(val2.split(MapReduceHelper.SEPARATOR)[5]);
+								
+								if (val1FlightNum < val2FlightNum)
+								{
+									return val1 + MapReduceHelper.SEPARATOR + val2;
+								}
+	
+								return val2 + MapReduceHelper.SEPARATOR + val1;
+							}
+						});
+				
+
 					isWritten = true;
 					System.out.println("\n-------WRITE TO CASSANDRA 1------ ");
 
@@ -244,9 +261,10 @@ public class G3T2XYZBestTravel {
 					}
                     
     				cassandraHelper.closeConnection();
+    				return rdd;
 				}
 				
-				return rdd;
+				return pairs;
 			}
 		};
 	}

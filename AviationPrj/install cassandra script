@@ -58,31 +58,41 @@ select * FROM keyspaceCapstone.perfDays;
 select * FROM keyspaceCapstone.topfromx;
 select * FROM keyspaceCapstone.topxy;
 select * FROM keyspaceCapstone.mean;
-select * FROM keyspaceCapstone.zipf;
 select * FROM keyspaceCapstone.findflight;
 
+
+DROP TABLE keyspaceCapstone.topAirports;
 create table keyspaceCapstone.topAirports (Airport text, Popularity text, Id int, Group int, PRIMARY KEY (Group, Id)) WITH CLUSTERING ORDER BY (Id ASC);
 
+DROP TABLE keyspaceCapstone.perfDays;
 create table keyspaceCapstone.perfDays (Day text, Perf text, Id int, Group int, PRIMARY KEY (Group, Id)) WITH CLUSTERING ORDER BY (Id ASC);
 
+DROP TABLE keyspaceCapstone.topfromx;
 create table keyspaceCapstone.topfromx (Origin text, FromAirline text, Perf text, Id int, PRIMARY KEY (Origin, Id)) WITH CLUSTERING ORDER BY (Id ASC);
 
+DROP TABLE keyspaceCapstone.topxy;
 create table keyspaceCapstone.topxy (Origin text, Dest text, Airline text, Perf text, Id int, PRIMARY KEY (Origin, Id)) WITH CLUSTERING ORDER BY (Id ASC);
 
+DROP TABLE keyspaceCapstone.mean;
 create table keyspaceCapstone.mean (Origin text, Dest text, Mean text, Id int, PRIMARY KEY (Origin, Id)) WITH CLUSTERING ORDER BY (Id ASC);
 
-create table keyspaceCapstone.zipf (Airport text, Popularity text, Id int, Group int, PRIMARY KEY (Group, Id)) WITH CLUSTERING ORDER BY (Id ASC);
-
+DROP TABLE keyspaceCapstone.findflight;
 create table keyspaceCapstone.findflight (Date1 text, Origin1 text, Dest1 text, Time1 text, FlightId1 text, Date2 text, Origin2 text, Dest2 text, Time2 text, FlightId2 text, PRIMARY KEY (Date1, Origin1, Dest1, Date2, Origin2, Dest2));
 
 
 
 
+select * FROM keyspaceCapstone.zipf;
+
+create table keyspaceCapstone.zipf (Airport text, Popularity text, Id int, Group int, PRIMARY KEY (Group, Id)) WITH CLUSTERING ORDER BY (Id ASC);
+
 //-------------------------------------------------------------
-COPY topfromx FROM '~/Capstone/Output/TopAirlinesFromX/part-r-00000';
-COPY topxy FROM '~/Capstone/Output/TopAirlinesXY/part-r-00000';
-COPY mean FROM '~/Capstone/Output/MeanXYDelay/part-r-00000';
-COPY findflight FROM '~/Capstone/Output/FindFlight/part-r-00000';
+COPY keyspacecapstone.topAirports (Airport, Popularity, Id, Group) FROM '~/Data/TopAirports/part-r-00000';
+COPY keyspacecapstone.perfDays (Day, Perf, Id, Group) FROM '~/Data/TopWeekDays/part-r-00000';
+COPY keyspacecapstone.topfromx (Origin, FromAirline, Perf, Id) FROM '~/Data/TopAirlinesFromX/part-r-00000';
+COPY keyspacecapstone.topxy (Origin, Dest, Airline, Perf, Id) FROM '~/Data/TopAirlinesXY/part-r-00000';
+COPY keyspacecapstone.mean (Origin, Dest, Mean, Id) FROM '~/Data/MeanXYDelay/part-r-00000';
+COPY keyspacecapstone.findflight (Date1, Origin1, Dest1, Time1, FlightId1, Date2, Origin2, Dest2, Time2, FlightId2) FROM '~/Data/FindFlight/part-r-00000';
 
 
 //-------------------------------------------------------------

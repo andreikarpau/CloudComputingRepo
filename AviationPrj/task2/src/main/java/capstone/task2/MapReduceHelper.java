@@ -5,7 +5,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -15,40 +14,58 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.streaming.api.java.JavaStreamingContext;
 
 import scala.Tuple2;
 import capstone.task2.FlightInformation.ColumnNames;
 
 public class MapReduceHelper {
-	public static enum SummingToUse 
-	{ 
-		IntegerSumming, 
-		LongIntTuplesSumming,
-		CompareFlightsAggregating
-	}
-	
 	public static final String INPUT_PARAMS = "inputParams";
 	public static final String TOPIC = "flightsTopic1";
 	public static final String FLUSH_RDD_FLAG = "flush.rdd.needed";
 	public static Boolean flushRDD = false;
+	public static Long recordsCount = 0l;
 	public static final String SEPARATOR = "_";
 	
+	private static final Integer WAIT_TIME = 40000;
 	private MapReduceHelper() {}
+	
+	public static void awaitTermination(JavaStreamingContext jssc){
+		while (true){
+			Long oldCount = recordsCount;
+			
+			if (jssc.awaitTerminationOrTimeout(WAIT_TIME)){
+				System.out.println("\n -------------Stream was stopped");
+				return;
+			}else{
+					jssc.awaitTerminationOrTimeout(WAIT_TIME);
+					
+				    if (recordsCount.equals(oldCount)){
+						System.out.println("\n -------------Flush results records operated = "  + recordsCount);
+						flushRDD = true;
+						jssc.awaitTerminationOrTimeout(WAIT_TIME);
+						return;
+				    }	
+			}
+			
+			System.out.println("\n -------------RECORDS COUNT = " + recordsCount);
+		}
+	}
 	
 	public static void fillBaseStreamingParams(String[] args, Map<String, String> paramsMap, SparkConf sparkConf, Map<String, Integer> topicMap, String folderName) throws IOException{
 		paramsMap.put("auto.offset.reset", "smallest");
 		paramsMap.put("zookeeper.connect", args[0]);
+		paramsMap.put("metadata.broker.list", args[0].split(":")[0] + ":6667");
 		paramsMap.put("group.id", args[1]);
 
-		paramsMap.put("rebalance.backoff.ms", "20000");
-		paramsMap.put("zookeeper.connection.timeout.ms", "40000");
+		//paramsMap.put("rebalance.backoff.ms", "20000");
+		paramsMap.put("zookeeper.connection.timeout.ms", "20000");
 
 		sparkConf.set("spark.connection.cassandra.host", args[2]).set("spark.cassandra.connection.port", args[3]);
 		sparkConf.set(FLUSH_RDD_FLAG, "false");
+		sparkConf.set("spark.streaming.kafka.maxRatePerPartition", "3000000");
 		
 		int numThreads = 1;
 
@@ -90,41 +107,12 @@ public class MapReduceHelper {
 			private static final long serialVersionUID = 1L;
 
 			public String call(Tuple2<String, String> arg0) throws Exception {
+				recordsCount++;
 				return arg0._2();
 			}
 		};
 	}
 
-	public static <B> B sumPairValues(B v1, B v2, SummingToUse summingToUse) throws Exception {
-		if (summingToUse == SummingToUse.IntegerSumming) {
-			Integer value = 0;
-				value += (Integer)v1;
-				value += (Integer)v2;
-			
-			return (B)value;
-		}
-			
-		if (summingToUse == SummingToUse.LongIntTuplesSumming) {
-			Tuple2<Long, Integer> value = new Tuple2<Long, Integer>(0L, 0);
-
-			Tuple2<Long, Integer> newVal1 = (Tuple2<Long, Integer>)v1;
-			value = new Tuple2<Long, Integer>(newVal1._1() + value._1(), newVal1._2() + value._2());
-
-			Tuple2<Long, Integer> newVal2 = (Tuple2<Long, Integer>)v2;
-			value = new Tuple2<Long, Integer>(newVal2._1() + value._1(), newVal2._2() + value._2());
-
-			return (B)value;
-		}
-		
-		if (summingToUse == SummingToUse.CompareFlightsAggregating){
-
-			return (B)CompareFlights((String)v1, (String)v2);
-		}
-		
-		throw new Exception("Correct sumPairValues function is not set!");
-		//return null;
-	}
-	
 	public static String CompareFlights(String v1, String v2) throws Exception {
 		if (v1 == null)
 			return v2;
@@ -146,51 +134,7 @@ public class MapReduceHelper {
 			return v2;
 		}
 	}
-	
-	public static <A, B> Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>> getRDDJoinWithPreviousFunction(final SummingToUse summingToUse){
-		return new Function<JavaPairRDD<A, B>, JavaPairRDD<A, B>>() {
-			private static final long serialVersionUID = 1L;
-			List<Tuple2<A, B>> prevRdd = null;
-			private int counter = 0;
-			
-			public JavaPairRDD<A, B> call(JavaPairRDD<A, B> rdd) throws Exception {
-				JavaPairRDD<A, B> newRdd = rdd;		
-
-				if (prevRdd != null) {				
-					/*newRdd = rdd.flatMapToPair(new PairFlatMapFunction<Tuple2<A,B>, A, B>() {
-
-						public Iterable<Tuple2<A, B>> call(Tuple2<A, B> t) throws Exception {
-							return prevRdd;
-						}
-						
-					});
-					
-					if (!rdd.take(1).isEmpty())
-					{
-						newRdd = rdd.union(prevRdd).reduceByKey(new Function2<B, B, B>() {
-							private static final long serialVersionUID = 1L;
-							public B call(B v1, B v2) throws Exception {
-								B value = sumPairValues(v1, v2, summingToUse);
-								return value;
-							}
-						});
-					}*/
-					
-					if (rdd.take(1).isEmpty() && !newRdd.take(1).isEmpty()){
-						counter++;
-						if (3 < counter)
-							flushRDD = true;
-					}else{
-						counter = 0;
-					}
-				}
-
-				prevRdd = newRdd.toArray();
-				return newRdd;
-			}
-		};
-	}
-	
+		
 	public static <A, B> PairFlatMapFunction<Tuple2<A, B>, B, A> getRDDFlipFunction(){
 		return new PairFlatMapFunction<Tuple2<A, B>, B, A>() {
 			private static final long serialVersionUID = 1L;
@@ -269,55 +213,5 @@ public class MapReduceHelper {
             set(texts);
         }
     }
-    /*
-	public static class Pair<A extends Comparable<? super A>, B extends Comparable<? super B>> implements Comparable<Pair<A, B>> {
-		
-		public final A first;
-		public final B second;
-	
-		public Pair(A first, B second) {
-			this.first = first;
-			this.second = second;
-		}
-	
-		public static <A extends Comparable<? super A>, B extends Comparable<? super B>> Pair<A, B> of(
-				A first, B second) {
-			return new Pair<A, B>(first, second);
-		}
-	
-		@Override
-		public int compareTo(MapReduceHelper.Pair<A, B> o) {
-			int cmp = o == null ? 1 : (this.first).compareTo(o.first);
-			return cmp == 0 ? (this.second).compareTo(o.second) : cmp;
-		}
-		
-		@Override
-		public int hashCode() {
-			return 31 * hashcode(first) + hashcode(second);
-		}
-	
-		private static int hashcode(Object o) {
-			return o == null ? 0 : o.hashCode();
-		}
-	
-		@Override
-		public boolean equals(Object obj) {
-			if (!(obj instanceof Pair))
-				return false;
-			if (this == obj)
-				return true;
-			return equal(first, ((Pair<?, ?>) obj).first)
-					&& equal(second, ((Pair<?, ?>) obj).second);
-		}
-	
-		private boolean equal(Object o1, Object o2) {
-			return o1 == o2 || (o1 != null && o1.equals(o2));
-		}
-	
-		@Override
-		public String toString() {
-			return "(" + first + ", " + second + ')';
-		}
-	}*/
 }
 

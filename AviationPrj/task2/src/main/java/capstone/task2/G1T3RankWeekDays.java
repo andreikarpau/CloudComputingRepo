@@ -14,17 +14,17 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
-import org.apache.spark.streaming.api.java.JavaPairReceiverInputDStream;
+import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
 
 import scala.Tuple2;
 import capstone.task2.FlightInformation.ColumnNames;
-import capstone.task2.MapReduceHelper.SummingToUse;
+
+import com.google.common.base.Optional;
 
 public class G1T3RankWeekDays {
 	public static void main(String[] args) throws IOException {
@@ -39,9 +39,10 @@ public class G1T3RankWeekDays {
 		
 		MapReduceHelper.fillBaseStreamingParams(args, paramsMap, sparkConf, topicMap, className);
 		
-		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(8000));
-		JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap, StorageLevel.MEMORY_AND_DISK_SER_2());
-
+		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(5000));
+		JavaPairInputDStream<String, String> messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, paramsMap, topicMap.keySet());	
+		jssc.checkpoint("/tmp/G1T3");
+		
 		JavaDStream<String> lines = messages.map(MapReduceHelper.getBaseInputPreprocessingFunction());
 
 		JavaPairDStream<String, Tuple2<Long, Integer>> sums = lines.flatMapToPair(
@@ -75,47 +76,66 @@ public class G1T3RankWeekDays {
 							return new Tuple2<Long, Integer>(value1._1() + value2._1(), value1._2() + value2._2());
 						}
 		});
-	
-		JavaPairDStream<String, Tuple2<Long, Integer>> fullRDD = sums.transformToPair(MapReduceHelper.<String, Tuple2<Long, Integer>>getRDDJoinWithPreviousFunction(SummingToUse.LongIntTuplesSumming));	
-		JavaPairDStream<String, Double> sorted = fullRDD.transformToPair(G1T3RankWeekDays.getSortFunction());
+		
+		sums = sums.updateStateByKey(new Function2<List<Tuple2<Long, Integer>>, Optional<Tuple2<Long, Integer>>, Optional<Tuple2<Long, Integer>>>() {
+			private static final long serialVersionUID = 1L;
+			public Optional<Tuple2<Long, Integer>> call(List<Tuple2<Long, Integer>> v1, Optional<Tuple2<Long, Integer>> v2) throws Exception {
+						Long sum1 = 0l;
+						Integer sum2 = 0;
+
+						for (Tuple2<Long, Integer> i : v1) {
+							sum1 += i._1();
+							sum2 += i._2();
+						}
+
+						if (v2.isPresent()){
+							sum1 += v2.get()._1();
+							sum2 += v2.get()._2();
+						}
+		
+						return Optional.of(new Tuple2<Long, Integer>(sum1, sum2));
+					}
+			});
+		
+		JavaPairDStream<String, Tuple2<Long, Integer>> sorted = sums.transformToPair(G1T3RankWeekDays.getSortFunction());
 		
 		sorted.print();
 		jssc.start();
-		jssc.awaitTermination();
+		MapReduceHelper.awaitTermination(jssc);
 		jssc.stop();
 	}
 	
-	public static Function<JavaPairRDD<String,Tuple2<Long,Integer>>, JavaPairRDD<String, Double>> getSortFunction(){
-		return new Function<JavaPairRDD<String, Tuple2<Long, Integer>>, JavaPairRDD<String, Double>>() {
+	public static Function<JavaPairRDD<String,Tuple2<Long,Integer>>, JavaPairRDD<String, Tuple2<Long, Integer>>> getSortFunction(){
+		return new Function<JavaPairRDD<String, Tuple2<Long, Integer>>, JavaPairRDD<String, Tuple2<Long, Integer>>>() {
 			private static final long serialVersionUID = 1L;
 			private Boolean isWritten = false;
 						
-			public JavaPairRDD<String, Double> call(JavaPairRDD<String, Tuple2<Long, Integer>> pairs) throws Exception {
-				JavaPairRDD<String, Double> perfs = pairs.mapToPair(new PairFunction<Tuple2<String,Tuple2<Long,Integer>>, String, Double>() {
-					private static final long serialVersionUID = 1L;
-					public Tuple2<String, Double> call(Tuple2<String, Tuple2<Long, Integer>> pair) throws Exception {
-			        	double sum = pair._2()._1();
-			        	int valuesCount = pair._2()._2();
-						
-			        	double perf = 1;
-			        	double inTime = valuesCount - sum;
-			        	
-			        	if (valuesCount != 0)
-			        		perf = inTime / valuesCount;
-			        	
-						return new Tuple2<String, Double>(pair._1(), perf);
-					}			 
-				 }).reduceByKey(new Function2<Double, Double, Double>() {
-						private static final long serialVersionUID = 1L;
-						public Double call(Double value1, Double value2) throws Exception {
-							return value1 + value2;
-						}
-					});
-				
-				JavaPairRDD<Double, String> rdd = perfs.flatMapToPair(MapReduceHelper.<String, Double>getRDDFlipFunction()).sortByKey(false);
-				
+			public JavaPairRDD<String, Tuple2<Long, Integer>> call(JavaPairRDD<String, Tuple2<Long, Integer>> pairs) throws Exception {
 				if (!isWritten && MapReduceHelper.flushRDD)
 				{
+					JavaPairRDD<String, Double> perfs = pairs.mapToPair(new PairFunction<Tuple2<String,Tuple2<Long,Integer>>, String, Double>() {
+						private static final long serialVersionUID = 1L;
+						public Tuple2<String, Double> call(Tuple2<String, Tuple2<Long, Integer>> pair) throws Exception {
+				        	double sum = pair._2()._1();
+				        	int valuesCount = pair._2()._2();
+							
+				        	double perf = 1;
+				        	double inTime = valuesCount - sum;
+				        	
+				        	if (valuesCount != 0)
+				        		perf = inTime / valuesCount;
+				        	
+							return new Tuple2<String, Double>(pair._1(), perf);
+						}			 
+					 }).reduceByKey(new Function2<Double, Double, Double>() {
+							private static final long serialVersionUID = 1L;
+							public Double call(Double value1, Double value2) throws Exception {
+								return value1 + value2;
+							}
+						});
+					
+					JavaPairRDD<Double, String> rdd = perfs.flatMapToPair(MapReduceHelper.<String, Double>getRDDFlipFunction()).sortByKey(false);
+				
 					isWritten = true;
 					System.out.println("\n-------WRITE TO CASSANDRA 1------ ");
 
@@ -146,9 +166,9 @@ public class G1T3RankWeekDays {
 					}
                     
     				cassandraHelper.closeConnection();
-				}
+    			}
 				
-				return rdd.flatMapToPair(MapReduceHelper.<Double, String>getRDDFlipFunction());
+				return pairs;
 			}
 		};
 	}

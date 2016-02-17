@@ -5,15 +5,20 @@ spark-shell
 :q
 
 // Mount data ////////////////////////
-sudo mount /dev/xvdg ~/ClearedData
+lsblk
+
+sudo mkdir ~/ClearedData
+sudo mount /dev/xvdf ~/ClearedData
+sudo cp -a ~/ClearedData/ClearedCSV ~/
+sudo umount ~/ClearedData
 
 
-scp -i AskofenKey.pem /home/askofen/Documents/EclipseWorkspace/task2/target/task2-0.0.1-jar-with-dependencies.jar ec2-user@ec2-54-173-14-126.compute-1.amazonaws.com:~/
+scp -i AskofenKey.pem /home/askofen/Documents/EclipseWorkspace/task2/target/task2-0.0.1-jar-with-dependencies.jar ec2-user@ec2-52-90-108-165.compute-1.amazonaws.com:~/
 ///////////////////////////////////////
 
 scp /home/askofen/Documents/EclipseWorkspace/task2/src/main/java/capstone/task2/* namenode:~/
 
-scp -i AskofenKey.pem /home/askofen/Documents/EclipseWorkspace/task2/src/main/java/capstone/task2/* ec2-user@ec2-52-90-96-192.compute-1.amazonaws.com:~/
+scp -i AskofenKey.pem /home/askofen/Documents/EclipseWorkspace/task2/src/main/java/capstone/task2/* ec2-user@ec2-54-86-91-234.compute-1.amazonaws.com:~/
 
 
 
@@ -41,13 +46,14 @@ spark-shell
 
 sudo su spark
 
-spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3
+spark-submit --master local[4] --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3
 
 spark-submit --master yarn-client --class capstone.task2.G1T3RankWeekDays ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3
 
 spark-submit --master yarn-client --class capstone.task2.G2T1RankAirlinesFromX ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3 ~/../TestData/airportsInput.txt
 
-spark-submit --master yarn-client --class capstone.task2.G2T3XYRankAirlinesArrPerf ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3 ~/../TestData/airportsXYInput.txt
+spark-submit --master yarn-client --class capstone.task2.G2T3XYRankAirlinesArrPerf ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.~/../inputs/airportsInput.txt
+31.5.89 9042 5 flightsTopic3 ~/../TestData/airportsXYInput.txt
 
 spark-submit --master yarn-client --class capstone.task2.G2T4XYMeanArrivalDelay ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.50.99:2181 0 172.31.5.89 9042 5 flightsTopic3 ~/../TestData/airportsXYInput.txt
 
@@ -77,11 +83,12 @@ kafka-topics.sh --list --zookeeper localhost:2181
 kafka-console-producer.sh --broker-list 172.31.50.99:6667 --topic flightsTopic
 
 ///////////////// Console Consumer
-kafka-console-consumer.sh --zookeeper 172.31.10.166:2181 --topic flightsTopic --from-beginning
+kafka-console-consumer.sh --zookeeper 172.31.50.99:2181 --topic flightsTopic --from-beginning flightsTopic3
 
+kafka-console-consumer.sh --zookeeper 172.31.6.184:2181 --topic flightsTopic --from-beginning
 
 /////////////////////////////////////////////////////////////
-java -cp ~/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.10.166:6667 sandbox.hortonworks.com:2181 /home/ec2-user/ClearedCSV/input4.txt flightsTopic
+java -cp ~/task2-0.0.1-jar-with-dependencies.jar capstone.task2.DataProducer 172.31.6.184:6667 sandbox.hortonworks.com:2181 /home/ec2-user/ClearedCSV/input8.txt flightsTopic
 
 
 ////////////////////////////////////////////////////////////
@@ -92,9 +99,19 @@ export PATH
 ////////////////////////////////////////////////////////////
 sudo su spark
 
-spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.10.166:2181 10b 172.31.10.166 9042 5 flightsTopic2
+spark-submit --master yarn-client --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.6.184:2181 0a 172.31.5.89 9042 5 flightsTopic
 
-spark-submit --master yarn --deploy-mode cluster --driver-memory 4g --executor-memory 2g --executor-cores 5 --class capstone.task2.G1T1RankAirports ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.10.166:2181 10b 172.31.10.166 9042 5 flightsTopic2
+spark-submit --master yarn-client --class capstone.task2.G1T3RankWeekDays ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.6.184:2181 0a 172.31.5.89 9042 5 flightsTopic 
+
+
+spark-submit --master yarn-client --class capstone.task2.G2T1RankAirlinesFromX ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.6.184:2181 0a 172.31.5.89 9042 5 flightsTopic ~/../inputs/airportsInput.txt
+
+spark-submit --master yarn-client --class capstone.task2.G2T3XYRankAirlinesArrPerf ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.6.184:2181 0a 172.31.5.89 9042 5 flightsTopic ~/../inputs/airportsXYInput.txt
+
+spark-submit --master yarn-client --class capstone.task2.G2T4XYMeanArrivalDelay ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.6.184:2181 0a 172.31.5.89 9042 5 flightsTopic ~/../inputs/airportsXYInput.txt
+
+spark-submit --master yarn-client --class capstone.task2.G3T2XYZBestTravel ~/../jars/task2-0.0.1-jar-with-dependencies.jar 172.31.6.184:2181 0a 172.31.5.89 9042 5 flightsTopic ~/../inputs/airportsXYZInput.txt
+
 
 
 
