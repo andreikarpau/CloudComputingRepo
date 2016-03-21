@@ -15,9 +15,31 @@ sudo chkconfig iptables off
 sudo /etc/init.d/iptables stop
 sudo service ntpd start
 
+//-----------------------------
+scp -i AskofenKey.pem ~/AskofenKey.pem ec2-user@ec2-52-201-243-136.compute-1.amazonaws.com:~/.ssh
+
+ssh-keygen
+
+cat ./.ssh/id_rsa.pub >> authorized_keys
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+
+scp -i AskofenKey.pem ~/.ssh/AskofenKey.pem ec2-user@ec2-54-209-95-80.compute-1.amazonaws.com:~/.ssh
+
+scp -i AskofenKey.pem ~/.ssh/id_rsa ec2-user@ec2-54-209-95-80.compute-1.amazonaws.com:~/.ssh
+
+scp -i AskofenKey.pem ~/.ssh/id_rsa.pub ec2-user@ec2-54-209-95-80.compute-1.amazonaws.com:~/.ssh
+
+cat ./.ssh/id_rsa.pub >> authorized_keys
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+
+
+//-----------------------------
 scp -i AskofenKey.pem ~/.ssh/AskofenKey.pem ~/.ssh/config ec2-user@ec2-52-91-215-189.compute-1.amazonaws.com:~/.ssh
 
 scp ~/.ssh/AskofenKey.pem ~/.ssh/config namenode:~/.ssh
+//-----------------------------
 sudo mv ./.ssh/AskofenKey.pem ./.ssh/id_rsa
 chmod 600 ~/.ssh/config
 
